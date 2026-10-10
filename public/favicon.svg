@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.5" />
+    </filter>
+    <linearGradient id="drip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#19f26b" />
+      <stop offset="1" stop-color="#19f26b" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- The letter is a path, not text: it must not depend on installed fonts. -->
+    <path
+      id="stroke"
+      d="M21.5 10.6C21.5 8 19.2 6.5 16 6.5c-3.3 0-5.5 1.7-5.5 4.3 0 2.7 2.5 3.8 5.5 4.8s5.5 2.2 5.5 5.2c0 2.8-2.3 4.7-5.5 4.7s-5.5-1.6-5.5-4.1"
+      fill="none"
+      stroke-linecap="square"
+    />
+
+    <!-- Horizontal slices of the letter, with a dark scanline between them. -->
+    <clipPath id="a"><rect y="0" width="32" height="10.1" /></clipPath>
+    <clipPath id="b"><rect y="10.7" width="32" height="2.6" /></clipPath>
+    <clipPath id="c"><rect y="13.9" width="32" height="4.3" /></clipPath>
+    <clipPath id="d"><rect y="18.8" width="32" height="2.5" /></clipPath>
+    <clipPath id="e"><rect y="21.9" width="32" height="10.1" /></clipPath>
+
+    <!-- The glitch: slices b and d are torn out of line, the rest stay. -->
+    <g id="glitched">
+      <g clip-path="url(#a)"><use href="#stroke" /></g>
+      <g clip-path="url(#b)"><use href="#stroke" x="2.3" /></g>
+      <g clip-path="url(#c)"><use href="#stroke" x="-0.6" /></g>
+      <g clip-path="url(#d)"><use href="#stroke" x="-2.5" /></g>
+      <g clip-path="url(#e)"><use href="#stroke" x="0.5" /></g>
+    </g>
+  </defs>
+
+  <rect width="32" height="32" rx="6" fill="#000" />
+
+  <!-- Code dripping off the letter. -->
+  <g stroke="url(#drip)" stroke-width="0.9">
+    <path d="M12.6 25v6.5M16.4 26v5M20 25v6" />
+  </g>
+
+  <use href="#glitched" stroke="#00ff66" stroke-width="4.2" filter="url(#glow)" />
+  <use href="#glitched" stroke="#19f26b" stroke-width="3" />
+  <use href="#glitched" stroke="#d2ffe2" stroke-width="1" />
+
+  <!-- Fragments thrown clear of the letter. -->
+  <g fill="#8dffbb">
+    <rect x="3" y="11.6" width="3.4" height="0.9" />
+    <rect x="26" y="19.6" width="3.4" height="0.9" />
+    <rect x="23.4" y="4.8" width="2.2" height="0.8" opacity="0.6" />
+    <rect x="5.2" y="27.4" width="2.2" height="0.8" opacity="0.6" />
+  </g>
+</svg>
