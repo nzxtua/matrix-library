@@ -1,0 +1,726 @@
+/* Owner: table. The table card (`components/DocTable.tsx`).
+
+   The table is laid out as a grid with subgrid rows, not as a CSS table: the
+   tracks come from all the rows (`--dt-cols`), so the filter cannot make a
+   column jump, and a row is a real box (light, ping, sticky cells). The
+   elements are still table elements, with their roles written out. Print
+   gets the plain table back.
+
+   On a row: `::before` is the row light, `::after` is free for the ping. */
+
+.doc__table {
+  /* Below 34rem of card width the rows become stacked cards. */
+  container: dtable / inline-size;
+  margin: 1.5rem 0;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-l);
+  background: var(--surface-1);
+}
+
+/* ───────────────────────────────── Bar ──────────────────────────────── */
+
+.dtable__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.5rem 0.5rem 0.25rem;
+}
+
+.dtable__filter {
+  display: flex;
+  flex: 0 1 19rem;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  height: 2rem;
+  /* The glyph sits on the same line as the text of the first column. */
+  padding: 0 0.25rem 0 0.5rem;
+  border-radius: var(--radius-s);
+  background: rgb(255 255 255 / 0.04);
+  color: var(--text-3);
+  cursor: text;
+  transition:
+    background-color var(--lit) ease-out,
+    color var(--lit) ease-out;
+}
+
+.dtable__filter:hover {
+  background: rgb(255 255 255 / 0.06);
+}
+
+/* The ring goes around the whole field, not the bare input inside it. */
+.dtable__filter:has(input:focus-visible) {
+  outline: var(--focus);
+  outline-offset: 0;
+  background: rgb(var(--accent) / 0.05);
+  color: var(--accent-ink);
+}
+
+.dtable__filter svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+}
+
+/* A filter that is on: the glyph stays lit. */
+.dtable[data-filtering] .dtable__filter {
+  color: var(--accent-ink);
+}
+
+.dtable__filter input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  outline: none;
+  color: var(--text);
+  font: 500 0.8125rem/1 var(--mono);
+  caret-color: rgb(var(--accent));
+}
+
+.dtable__filter input::placeholder {
+  color: var(--text-3);
+  opacity: 1;
+}
+
+.dtable__clear {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-s);
+  color: var(--text-2);
+  transition:
+    background-color var(--lit-fast) ease-out,
+    color var(--lit-fast) ease-out;
+}
+
+.dtable__clear:hover {
+  background: rgb(255 255 255 / 0.08);
+  color: var(--text);
+}
+
+.dtable__clear svg,
+.dtable__copy svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Counters and the copy button share the eyebrow type. */
+.dtable__count,
+.dtable__copy {
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dtable__count {
+  margin-right: auto;
+  padding: 0 0.5rem;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.dtable__count:empty {
+  padding: 0;
+}
+
+.dtable__copy {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2rem;
+  padding: 0 0.5rem 0 0.625rem;
+  border-radius: var(--radius-s);
+  color: var(--text-2);
+  transition:
+    background-color var(--lit-fast) ease-out,
+    color var(--lit-fast) ease-out;
+}
+
+.dtable__copy:hover,
+.dtable__copy[aria-expanded="true"] {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text);
+}
+
+.dtable__copy svg {
+  transition: transform var(--lit) var(--spring-snappy);
+}
+
+.dtable__copy[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+/* ─────────────────────────────── Copy menu ──────────────────────────── */
+
+/* A popover: it lives in the top layer, placed by `CopyMenu`. */
+.dtable__menu {
+  position: fixed;
+  inset: auto;
+  min-width: 10rem;
+  margin: 0;
+  padding: 0.25rem;
+  overflow: visible;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.55);
+  color: var(--text);
+  opacity: 0;
+  transition:
+    opacity var(--lit-fast) ease-out,
+    overlay var(--lit-fast) allow-discrete,
+    display var(--lit-fast) allow-discrete;
+}
+
+.dtable__menu:popover-open {
+  opacity: 1;
+}
+
+@starting-style {
+  .dtable__menu:popover-open {
+    opacity: 0;
+  }
+}
+
+.dtable__menu button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: var(--radius-s);
+  color: var(--text-2);
+  font: 500 0.75rem/1 var(--mono);
+  letter-spacing: 0.02em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.dtable__menu button:hover,
+.dtable__menu button:focus-visible {
+  background: rgb(255 255 255 / 0.07);
+  color: var(--text);
+}
+
+.dtable__menu button:focus-visible {
+  outline-offset: -2px;
+}
+
+/* ──────────────────────────────── Table ─────────────────────────────── */
+
+/* Does not fit (the default until it is measured): the wrapper scrolls
+   sideways. Fits: nothing scrolls, so the heading can stick to the page. */
+.dtable__scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border-radius: 0 0 calc(var(--radius-l) - 1px) calc(var(--radius-l) - 1px);
+  scrollbar-width: thin;
+}
+
+.dtable:where([data-fit="true"]) .dtable__scroll {
+  overflow: visible;
+}
+
+/* The box that scrolls takes the focus; the ring goes around the card, where
+   the key column cannot cover it. */
+.dtable__scroll:focus-visible {
+  outline: none;
+}
+
+.dtable:has(.dtable__scroll:focus-visible) {
+  outline: var(--focus);
+  outline-offset: 2px;
+}
+
+.dtable table {
+  display: grid;
+  grid-template-columns: var(--dt-cols);
+  width: 100%;
+  min-width: var(--dt-min);
+  margin: 0;
+  color: var(--text);
+  font: 420 0.9375rem/1.5 var(--body);
+}
+
+.dtable thead,
+.dtable tbody,
+.dtable tr {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+/* `display: grid` would show a row that the filter has hidden. */
+.dtable tr[hidden] {
+  display: none;
+}
+
+.dtable th,
+.dtable td {
+  display: block;
+  min-width: 0;
+  text-align: left;
+}
+
+/* ─── Heading */
+
+.dtable thead {
+  background: var(--surface-1);
+}
+
+.dtable:where([data-fit="true"]) thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.dtable thead tr {
+  border-bottom: 1px solid var(--hairline-strong);
+  transition: border-color var(--lit) ease-out;
+}
+
+.dtable thead th {
+  padding: 0.5rem 1rem 0.625rem;
+  color: var(--text-3);
+  font: 500 0.6875rem/1.5 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: color var(--lit) ease-out;
+}
+
+/* The heading of the column under the pointer. */
+.dtable thead th[data-lit] {
+  color: var(--text);
+}
+
+.dtable thead th code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+/* The heading that sticks to the top of the page catches the light. */
+@supports (container-type: scroll-state) {
+  .dtable:where([data-fit="true"]) thead {
+    container-type: scroll-state;
+  }
+
+  @container scroll-state(stuck: top) {
+    .dtable thead tr {
+      border-bottom-color: rgb(var(--accent) / 0.45);
+    }
+  }
+}
+
+/* ─── Rows */
+
+.dtable tbody tr {
+  position: relative;
+  /* The light is behind the cells, the ping ring in front: both stay in the row. */
+  isolation: isolate;
+  /* A jump leaves room for the heading that sticks above the row. */
+  scroll-margin-top: 4.25rem;
+}
+
+.dtable tbody tr[data-ping] {
+  z-index: 1;
+}
+
+/* The line under a row belongs to its cells: a key cell that sticks takes
+   its part of the line along. */
+.dtable tbody th,
+.dtable tbody td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--hairline);
+  font-weight: inherit;
+  overflow-wrap: break-word;
+}
+
+/* The last row on screen: the card closes it. */
+.dtable tbody tr:nth-last-child(1 of :not([hidden])) > * {
+  border-bottom-color: transparent;
+}
+
+/* The key column: a name, a number, a path. Code in it is bare, the whole
+   cell is the chip. The line is as tall as a line of body text. */
+.dtable tbody th {
+  color: var(--code-ink);
+  font: 500 0.8125rem/1.7308 var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.dtable tbody th code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+/* The key of the row under the light takes the ink. */
+.dtable tbody th {
+  transition: color var(--lit) ease-out;
+}
+
+@media (hover: hover) {
+  .dtable tbody tr:hover th {
+    color: var(--accent-ink);
+    transition-duration: var(--lit-fast);
+  }
+}
+
+.dtable tbody tr:has(:focus-visible) th {
+  color: var(--accent-ink);
+}
+
+/* The table scrolls sideways: the key column stays. It covers what goes
+   under it only once something does. */
+.dtable:where([data-key]:not([data-fit="true"])) thead th:first-child,
+.dtable:where([data-key]:not([data-fit="true"])) tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.dtable:where([data-key]) .dtable__scroll[data-scrolled] thead th:first-child,
+.dtable:where([data-key]) .dtable__scroll[data-scrolled] tbody th {
+  background: var(--surface-1);
+  /* A hairline, not a shadow. */
+  box-shadow: inset -1px 0 0 var(--hairline-strong);
+}
+
+/* ─── Row light */
+
+/* A soft light under the pointer (`--mx`, `--my` on this row only) and a
+   line of it along the lower edge. Low enough to leave the ink alone. */
+.dtable tbody tr::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, transparent, rgb(var(--accent) / 0.55), transparent)
+      calc(var(--mx, 50%) - 10rem) 100% / 20rem 1px no-repeat,
+    radial-gradient(
+      circle 22rem at var(--mx, 50%) var(--my, 50%),
+      rgb(var(--accent) / 0.07),
+      transparent
+    );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--lit) ease-out;
+}
+
+@media (hover: hover) {
+  .dtable tbody tr:hover::before {
+    opacity: 1;
+    transition-duration: var(--lit-fast);
+  }
+}
+
+.dtable tbody tr:has(:focus-visible)::before {
+  opacity: 1;
+}
+
+.dtable tbody tr:nth-last-child(1 of :not([hidden]))::before {
+  border-radius: 0 0 calc(var(--radius-l) - 1px) calc(var(--radius-l) - 1px);
+}
+
+/* ─── Row link */
+
+.dtable__act {
+  padding: 0;
+}
+
+.dtable tbody .dtable__act {
+  /* The button is centred on the first line of the row. */
+  padding: 0.5rem 0.375rem 0 0;
+}
+
+.dtable__act button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-s);
+  color: var(--text-3);
+  font: 500 0.875rem/1 var(--mono);
+  opacity: 0;
+  transition:
+    opacity var(--lit) ease-out,
+    background-color var(--lit-fast) ease-out,
+    color var(--lit-fast) ease-out,
+    transform var(--lit) var(--spring-snappy);
+}
+
+.dtable tbody tr:hover .dtable__act button,
+.dtable__act button:focus-visible {
+  opacity: 1;
+}
+
+.dtable__act button:hover {
+  background: rgb(var(--accent) / 0.1);
+  color: var(--accent-ink);
+}
+
+.dtable__act button:active {
+  transform: scale(0.9);
+}
+
+/* No hover: the button is always there. */
+@media (hover: none) {
+  .dtable__act button {
+    opacity: 1;
+  }
+}
+
+/* ─── Filter */
+
+/* What the filter found, in the rows that stay (`CSS.highlights`). */
+::highlight(filter) {
+  background-color: rgb(var(--accent) / 0.2);
+  color: var(--accent-ink);
+}
+
+.dtable .dtable__empty {
+  margin: 0;
+  padding: 1.25rem 1rem 1.5rem;
+  color: var(--text-2);
+  font: 500 0.8125rem/1.5 var(--mono);
+}
+
+/* ───────────────────────────── Touch sizes ──────────────────────────── */
+
+@media (pointer: coarse) {
+  .dtable__bar {
+    padding-bottom: 0.5rem;
+  }
+
+  .dtable__filter,
+  .dtable__copy {
+    height: 2.75rem;
+  }
+
+  .dtable__filter input {
+    /* Under 16px, iOS zooms the page when the field takes focus. */
+    font-size: 1rem;
+  }
+
+  .dtable__clear {
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-right: -0.25rem;
+  }
+
+  .dtable__copy {
+    padding: 0 0.75rem 0 0.875rem;
+  }
+
+  .dtable__menu button {
+    min-height: 2.75rem;
+  }
+
+  .dtable__act button {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .dtable tbody .dtable__act {
+    padding: 0.125rem 0 0;
+  }
+}
+
+/* ──────────────────────────── Stacked cards ─────────────────────────── */
+
+/* A narrow card: every row is a stack of its cells, each under the heading
+   of its column. Nothing scrolls sideways. */
+@container dtable (width < 34rem) {
+  /* The field takes the row; the count of what it kept goes under it. */
+  .dtable__bar {
+    flex-wrap: wrap;
+  }
+
+  .dtable__filter {
+    flex: 1 1 0;
+  }
+
+  .dtable__filter ~ .dtable__count {
+    flex-basis: 100%;
+    order: 1;
+    padding: 0.375rem 0.5rem 0.25rem;
+  }
+
+  .dtable__filter ~ .dtable__count:empty {
+    display: none;
+  }
+
+  .dtable .dtable__scroll {
+    overflow: visible;
+  }
+
+  .dtable .dtable__scroll :is(table, tbody, tbody tr, tbody th, tbody td) {
+    display: block;
+  }
+
+  .dtable .dtable__scroll table {
+    min-width: 0;
+  }
+
+  .dtable .dtable__scroll tr[hidden] {
+    display: none;
+  }
+
+  /* Still read by a screen reader: the captions below are only for the eye. */
+  .dtable .dtable__scroll thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .dtable .dtable__scroll tbody tr {
+    padding: 1rem 1rem 1.125rem;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .dtable .dtable__scroll tbody tr:nth-last-child(1 of :not([hidden])) {
+    border-bottom-color: transparent;
+  }
+
+  .dtable .dtable__scroll tbody :is(th, td) {
+    position: static;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    /* An aligned column means nothing in a stack. */
+    text-align: left !important;
+  }
+
+  .dtable .dtable__scroll tbody :is(th, td) + :is(th, td):not(.dtable__act) {
+    margin-top: 0.875rem;
+  }
+
+  /* Room for the link button in the corner. */
+  .dtable .dtable__scroll tbody tr > :first-child {
+    padding-right: 2.5rem;
+  }
+
+  .dtable .dtable__scroll tbody th {
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  .dtable .dtable__scroll tbody [data-label]::before {
+    content: attr(data-label);
+    /* The heading of the column already says it to a screen reader. */
+    content: attr(data-label) / "";
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--text-3);
+    font: 500 0.6875rem/1.5 var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* The key is the title of its card: its caption sits on the same line. */
+  .dtable .dtable__scroll tbody th[data-label]::before {
+    display: inline-block;
+    margin: 0 0.75rem 0 0;
+  }
+
+  .dtable .dtable__scroll tbody .dtable__act {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+  }
+
+  .dtable .dtable__scroll .dtable__act button {
+    width: 2.75rem;
+    height: 2.75rem;
+    opacity: 1;
+  }
+}
+
+/* ──────────────────────────────── Print ─────────────────────────────── */
+
+/* Paper gets the plain table: the heading repeats on every page. The rest of
+   the print look belongs to `print.css`. */
+@media print {
+  .dtable__bar,
+  .dtable__act,
+  .dtable__menu {
+    display: none;
+  }
+
+  .dtable .dtable__scroll {
+    overflow: visible;
+  }
+
+  .dtable table {
+    display: table;
+    min-width: 0;
+  }
+
+  .dtable thead {
+    display: table-header-group;
+    position: static;
+  }
+
+  .dtable tbody {
+    display: table-row-group;
+  }
+
+  .dtable tr {
+    display: table-row;
+    break-inside: avoid;
+  }
+
+  .dtable tr[hidden] {
+    display: none;
+  }
+
+  .dtable th,
+  .dtable td {
+    display: table-cell;
+    position: static;
+    vertical-align: top;
+  }
+
+  .dtable tbody tr::before {
+    content: none;
+  }
+}
+
+/* ───────────────────────────── Less motion ──────────────────────────── */
+
+/* The system setting and the "calm" preference get the same treatment: the
+   row is lit evenly and at once, nothing follows the pointer or springs. */
+html[data-calm] :is(.dtable__filter, .dtable__clear, .dtable__copy, .dtable__menu),
+html[data-calm] .dtable__copy svg,
+html[data-calm] .dtable thead tr,
+html[data-calm] .dtable thead th,
+html[data-calm] .dtable tbody th,
+html[data-calm] .dtable tbody tr::before,
+html[data-calm] .dtable__act button {
+  transition: none;
+}
+
+html[data-calm] .dtable tbody tr::before {
+  background: rgb(var(--accent) / 0.04);
+}
+
+html[data-calm] .dtable__act button:active {
+  transform: none;
+}

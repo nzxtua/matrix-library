@@ -1,0 +1,1314 @@
+/* Owner: doc. The document: the two tracks, the title block, headings, prose,
+   code and the first materialise. Read for an hour: the column is calm, the
+   poster title is the one loud moment.
+
+   `::after` of `.doc__block` and of every heading belongs to the ping
+   (`tokens.css`). Nothing here uses it. */
+
+/* ─────────────────────────────── Tracks ─────────────────────────────── */
+
+/* A prose track and a full track for tables, code, the title and the rule
+   of a part. Prose runs as wide as tables: both tracks are the same. */
+.doc {
+  --doc-gutter: clamp(1.25rem, 4vw, 3.5rem);
+  display: grid;
+  grid-template-columns: [full-start prose-start] minmax(0, 1fr) [prose-end full-end];
+  align-content: start;
+  width: 100%;
+  max-width: calc(72rem + 2 * var(--doc-gutter));
+  margin: 0 auto;
+  padding: 4.5rem var(--doc-gutter) 10rem;
+  color: var(--text);
+  font: 420 1.0625rem/1.65 var(--body);
+}
+
+/* The rhythm lives on the wrapper. A grid item keeps the margins of its
+   children inside its box, and the box is what the ping, the ruler and the
+   reading tracker measure: so the first child has no margin of its own. */
+.doc__block {
+  grid-column: prose;
+  min-width: 0;
+  margin-top: 1.15rem;
+}
+
+.doc > .doc__block > :first-child {
+  margin-top: 0;
+}
+
+.doc__block:first-child {
+  margin-top: 0;
+}
+
+.doc__block[data-kind="table"],
+.doc__block[data-kind="code"] {
+  grid-column: full;
+  margin-top: 1.75rem;
+}
+
+.doc__block[data-kind="table"] + .doc__block,
+.doc__block[data-kind="code"] + .doc__block {
+  margin-top: 1.75rem;
+}
+
+/* Headings: the space above says how big the break is. */
+.doc__block[data-kind="heading"] {
+  position: relative;
+  margin-top: 2rem;
+}
+
+.doc__block[data-depth="3"] {
+  margin-top: 2.5rem;
+}
+
+.doc__block[data-depth="2"] {
+  margin-top: 4rem;
+}
+
+.doc__block[data-kind="heading"] + .doc__block {
+  margin-top: 0.7rem;
+}
+
+.doc__block[data-depth="2"] + .doc__block {
+  margin-top: 0.9rem;
+}
+
+/* A heading right under a heading: they are one group. */
+.doc__block[data-kind="heading"] + .doc__block[data-kind="heading"] {
+  margin-top: 1.75rem;
+}
+
+.doc__block[data-kind="heading"] + .doc__block[data-kind="table"],
+.doc__block[data-kind="heading"] + .doc__block[data-kind="code"] {
+  margin-top: 1.15rem;
+}
+
+/* ───────────────────────────── Title block ──────────────────────────── */
+
+.doc__block[data-title] {
+  grid-column: full;
+  margin-top: 0;
+}
+
+.doc__block[data-title] + .doc__block {
+  margin-top: 2.75rem;
+}
+
+.doc h1,
+.doc h2,
+.doc h3,
+.doc h4,
+.doc h5,
+.doc h6 {
+  margin: 1.75rem 0 0;
+  color: var(--text);
+}
+
+/* The poster. */
+.doc .doc-header__title {
+  max-width: 13em;
+  margin: 0;
+  font: 850 clamp(2.6rem, 6vw, 5rem) / 0.95 var(--display);
+  font-stretch: 70%;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+
+/* Code in a poster heading is outlined: ink that is not lit yet. The fill is
+   the page colour and it is painted over the stroke, so the inner half of the
+   stroke and the overlaps of the variable font's contours do not show. */
+.doc .doc-header__title code,
+.doc .doc-part__title code {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--bg);
+  font: inherit;
+  /* Room between the letters: their outlines do not run into each other. */
+  letter-spacing: 0.07em;
+  overflow-wrap: normal;
+  /* Half of the stroke shows: 1.5 px at the least. */
+  -webkit-text-stroke: max(0.05em, 3px) rgb(var(--accent));
+  paint-order: stroke fill;
+}
+
+/* What the document holds. */
+.doc .doc-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.9rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doc .doc-stats li {
+  margin: 0;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  /* The chips stand in front of bullet time (`bullet-time.css`): solid,
+     so the scene never runs through their words. */
+  background: var(--bg);
+  color: var(--text-2);
+  font: 500 0.6875rem/1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.doc-stats b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* How long it takes is the one a reader asks first. */
+.doc-stats li:first-child {
+  border-color: rgb(var(--accent) / 0.5);
+  color: var(--accent-ink);
+}
+
+.doc-stats li:first-child b {
+  color: inherit;
+}
+
+/* ─────────────────────────────── Parts ──────────────────────────────── */
+
+/* A part opens with a rule over the full track. Its first stretch is ink. */
+.doc__block[data-depth="1"]:not([data-title]) {
+  grid-column: full;
+  margin-top: 6.5rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--hairline-strong);
+}
+
+.doc__block[data-depth="1"]:not([data-title])::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 3rem;
+  height: 2px;
+  background: rgb(var(--accent));
+}
+
+.doc__block[data-depth="1"]:not([data-title]) + .doc__block {
+  margin-top: 1.5rem;
+}
+
+.doc__block[data-depth="1"]:not([data-title]) + .doc__block[data-kind="heading"] {
+  margin-top: 2.75rem;
+}
+
+.doc-part {
+  max-width: none;
+}
+
+.doc-part__eyebrow {
+  display: block;
+  color: var(--accent-ink);
+  font: 500 0.6875rem/1.5 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.doc-part__title {
+  display: block;
+  margin-top: 0.7rem;
+  font: 800 clamp(2rem, 3.6vw, 2.75rem) / 1 var(--display);
+  font-stretch: 76%;
+  text-wrap: balance;
+}
+
+/* Decode: a part waits as dim noise, decodes in the accent, then cools to
+   ink. The accent stroke over the part draws in while the letters settle. */
+.doc-part[data-decode] :is(.doc-part__eyebrow, .doc-part__title) {
+  transition:
+    color 700ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 240ms ease-out;
+}
+
+.doc-part[data-decode="pending"] :is(.doc-part__eyebrow, .doc-part__title) {
+  opacity: 0.28;
+}
+
+.doc-part[data-decode="running"] .doc-part__title {
+  color: var(--accent-ink);
+  transition-duration: 0ms, 240ms;
+}
+
+.doc__block[data-depth="1"]:not([data-title])::before {
+  transform-origin: left;
+  transition: scale 720ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.doc__block:has(> .doc-part[data-decode="pending"])::before {
+  scale: 0 1;
+}
+
+/* A rule the writer put right before a part is that part's rule: one line,
+   not two. The block keeps its place and one pixel of height. */
+.doc__block[data-kind="hr"] {
+  grid-column: full;
+  margin-top: 3.5rem;
+}
+
+.doc__block[data-kind="hr"] + .doc__block {
+  margin-top: 3.5rem;
+}
+
+.doc hr {
+  height: 1px;
+  margin: 3rem 0 0;
+  border: 0;
+  background: var(--hairline-strong);
+}
+
+.doc__block[data-kind="hr"]:has(+ .doc__block[data-depth="1"]) {
+  margin-top: 0;
+}
+
+.doc__block[data-kind="hr"]:has(+ .doc__block[data-depth="1"]) hr {
+  background: none;
+}
+
+.doc__block[data-kind="hr"] + .doc__block[data-depth="1"]:not([data-title]) {
+  margin-top: 6.5rem;
+}
+
+/* ───────────────────────────── Sections ─────────────────────────────── */
+
+.doc h2 {
+  display: flex;
+  gap: 0.8rem;
+  align-items: baseline;
+  font: 700 1.625rem/1.15 var(--display);
+  font-stretch: 88%;
+  letter-spacing: 0.005em;
+}
+
+.doc-h__title {
+  min-width: 0;
+  text-wrap: balance;
+}
+
+/* The chip of a section: its code. An outline until the reader is in the
+   section, then filled. The lit state is a second layer that fades in, so
+   only opacity changes. */
+.doc-chip {
+  position: relative;
+  flex: none;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid rgb(var(--accent) / 0.42);
+  border-radius: var(--radius-s);
+  color: var(--accent-ink);
+  font: 600 0.6875rem/1.2 var(--mono);
+  font-stretch: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  /* The chip sits on the baseline of the title; this centres it on the caps. */
+  translate: 0 -0.3rem;
+}
+
+.doc-chip::after {
+  content: attr(data-code);
+  position: absolute;
+  inset: -1px;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: rgb(var(--accent));
+  color: var(--on-accent);
+  opacity: 0;
+  transition: opacity var(--lit) ease-out;
+}
+
+.doc-chip[data-lit]::after {
+  opacity: 1;
+}
+
+.doc h3 {
+  font: 650 1.1875rem/1.35 var(--body);
+  letter-spacing: -0.005em;
+}
+
+.doc h4 {
+  font: 650 1.0625rem/1.4 var(--body);
+}
+
+.doc h5,
+.doc h6 {
+  color: var(--text-2);
+  font: 500 0.6875rem/1.5 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Code in a section heading stays a calm chip, a little smaller. */
+.doc h2 code,
+.doc h3 code,
+.doc h4 code {
+  font-size: 0.8em;
+  font-stretch: normal;
+  letter-spacing: 0;
+}
+
+/* The link button of a heading. In the gutter, lit when the heading is
+   pointed at or the button has the focus. */
+.doc-anchor {
+  position: absolute;
+  top: -0.12rem;
+  left: -2.5rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-s);
+  color: var(--text-3);
+  font: 500 1.0625rem/1 var(--mono);
+  opacity: 0;
+  transition: opacity var(--lit-fast) ease-out;
+}
+
+/* The way from the heading to the button stays inside the button. */
+.doc-anchor::before {
+  content: "";
+  position: absolute;
+  inset: 0 -0.5rem 0 0;
+}
+
+.doc__block[data-depth="1"] > .doc-anchor {
+  /* On the line of the title, under the eyebrow. */
+  top: calc(1.75rem + 0.6875rem * 1.5 + 0.7rem + (clamp(2rem, 3.6vw, 2.75rem) - 2rem) / 2);
+}
+
+.doc__block[data-depth="3"] > .doc-anchor {
+  top: -0.2rem;
+}
+
+.doc__block[data-depth="4"] > .doc-anchor,
+.doc__block[data-depth="5"] > .doc-anchor,
+.doc__block[data-depth="6"] > .doc-anchor {
+  top: -0.3rem;
+}
+
+.doc__block[data-kind="heading"]:hover > .doc-anchor,
+.doc-anchor:focus-visible {
+  opacity: 1;
+}
+
+.doc-anchor:hover,
+.doc-anchor:focus-visible {
+  color: var(--accent-ink);
+}
+
+.doc-anchor:active {
+  color: var(--text);
+}
+
+/* No gutter and no hover: the button is at the end of the heading, always
+   there, and big enough for a thumb. */
+@media (max-width: 60rem), (hover: none) {
+  .doc__block[data-kind="heading"] {
+    padding-right: 2.75rem;
+  }
+
+  .doc-anchor,
+  .doc__block[data-depth="3"] > .doc-anchor,
+  .doc__block[data-depth="4"] > .doc-anchor,
+  .doc__block[data-depth="5"] > .doc-anchor,
+  .doc__block[data-depth="6"] > .doc-anchor {
+    top: 50%;
+    right: -0.75rem;
+    left: auto;
+    width: 2.75rem;
+    min-width: 44px;
+    height: 2.75rem;
+    min-height: 44px;
+    opacity: 1;
+    translate: 0 -50%;
+  }
+
+  .doc__block[data-depth="1"] > .doc-anchor {
+    top: calc(1.75rem + 0.6875rem * 1.5 + 0.7rem + clamp(2rem, 3.6vw, 2.75rem) / 2);
+  }
+}
+
+/* ──────────────────────────────── Prose ─────────────────────────────── */
+
+.doc p,
+.doc ul,
+.doc ol,
+.doc blockquote {
+  margin: 1.15rem 0 0;
+}
+
+.doc p,
+.doc li {
+  text-wrap: pretty;
+}
+
+.doc strong {
+  font-weight: 650;
+}
+
+/* A meta line ("Company · Place · Dates"): badges in the voice of the stats
+   chips. The first part (who) is in ink. A span that runs until now has a
+   live dot. */
+.doc .doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.doc-meta__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-2);
+  font: 500 0.6875rem/1.3 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.doc-meta__glyph {
+  flex: none;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-inline-start: -0.1rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+  opacity: 0.85;
+}
+
+.doc-meta__badge:first-child {
+  border-color: rgb(var(--accent) / 0.5);
+  background: rgb(var(--accent) / 0.06);
+  color: var(--accent-ink);
+}
+
+.doc-meta__badge[data-ongoing] {
+  color: var(--text);
+}
+
+/* The live dot closes the span, after the date. */
+.doc-meta__badge[data-ongoing]::after {
+  content: "";
+  flex: none;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: rgb(var(--accent));
+  animation: doc-meta-live 2.4s ease-out infinite;
+}
+
+@keyframes doc-meta-live {
+  from {
+    box-shadow: 0 0 0 0 rgb(var(--accent) / 0.55);
+  }
+  70%,
+  to {
+    box-shadow: 0 0 0 0.45rem rgb(var(--accent) / 0);
+  }
+}
+
+/* Skills rows ("**Web**\tTypeScript, Vite"): a ruled list. The label sits in
+   its own column under a running number; each tool is a capsule with its real
+   mark in its own colour. On hover the rule draws in accent, a capsule lifts
+   2px and takes a glow of its brand. Rows run on without a gap: one table. */
+.doc__block[data-kind="heading"] {
+  counter-reset: skill;
+}
+
+.doc__block:has(> .doc-skill) + .doc__block:has(> .doc-skill) {
+  margin-top: 0;
+}
+
+.doc__block:has(> .doc-skill):not(:has(+ .doc__block > .doc-skill)) > .doc-skill {
+  border-bottom: 1px solid var(--hairline);
+}
+
+.doc-skill {
+  display: grid;
+  grid-template-columns: minmax(8.5rem, 12.5rem) minmax(0, 1fr);
+  gap: 0.7rem 2rem;
+  padding: 1.05rem 0;
+  border-top: 1px solid var(--hairline);
+  background: linear-gradient(rgb(var(--accent) / 0.7), rgb(var(--accent) / 0.7)) no-repeat 0 -1px /
+    0% 1px;
+  counter-increment: skill;
+  transition: background-size 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.doc-skill:hover {
+  background-size: 100% 1px;
+}
+
+.doc .doc-skill__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding-top: 0.2rem;
+  color: var(--text);
+  font: 600 1rem/1.3 var(--body);
+  letter-spacing: -0.005em;
+}
+
+.doc-skill__label::before {
+  content: counter(skill, decimal-leading-zero);
+  color: var(--text-3);
+  font: 500 0.6875rem/1 var(--mono);
+  letter-spacing: 0.14em;
+  transition: color var(--lit);
+}
+
+.doc-skill:hover .doc-skill__label::before {
+  color: var(--accent-ink);
+}
+
+.doc .doc-skill__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doc .doc-skill__item {
+  --tint: var(--brand, rgb(var(--accent)));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  margin: 0;
+  padding: 0.38rem 0.85rem 0.38rem 0.6rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0) 70%), var(--surface-1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  color: var(--text);
+  font: 500 0.875rem/1.3 var(--body);
+  transition:
+    border-color var(--lit),
+    box-shadow var(--lit),
+    translate var(--lit) var(--spring-snappy);
+}
+
+.doc .doc-skill__item:hover {
+  border-color: color-mix(in oklab, var(--tint) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    0 0.6rem 1.4rem -0.7rem color-mix(in oklab, var(--tint) 70%, transparent);
+  translate: 0 -2px;
+}
+
+/* A square mark is 1rem; a wordmark keeps its proportions up to 1.75rem. */
+.doc-skill__mark {
+  flex: none;
+  width: auto;
+  max-width: 1.75rem;
+  height: 1rem;
+  aspect-ratio: 1;
+  object-fit: contain;
+  color: var(--brand, var(--text));
+  transition: scale var(--lit) var(--spring-snappy);
+}
+
+img.doc-skill__mark {
+  border-radius: 3px;
+}
+
+/* Multi-colour art keeps its colours; its `currentColor` parts are ink. */
+.doc-skill__mark[data-art] {
+  color: var(--text);
+}
+
+/* An idea, not a product: a line symbol, quiet until the capsule is lit. */
+.doc-skill__mark[data-symbol] {
+  color: var(--text-2);
+  transition:
+    color var(--lit),
+    scale var(--lit) var(--spring-snappy);
+}
+
+.doc-skill__item:hover .doc-skill__mark[data-symbol] {
+  color: var(--accent-ink);
+}
+
+.doc-skill__item:hover .doc-skill__mark {
+  scale: 1.12;
+}
+
+.doc-skill__dot {
+  flex: none;
+  width: 0.375rem;
+  height: 0.375rem;
+  margin-inline: 0.3125rem;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition:
+    background var(--lit),
+    box-shadow var(--lit);
+}
+
+.doc-skill__item:hover .doc-skill__dot {
+  background: rgb(var(--accent));
+  box-shadow: 0 0 0.5rem rgb(var(--accent) / 0.7);
+}
+
+.doc-skill__name {
+  white-space: nowrap;
+}
+
+/* What the brackets said: quieter, after a hairline. */
+.doc-skill__detail {
+  padding-left: 0.55rem;
+  border-left: 1px solid var(--hairline-strong);
+  color: var(--text-2);
+  font-size: 0.8125rem;
+}
+
+/* Capsules settle in one after another as the row scrolls into view. */
+@supports (animation-timeline: view()) {
+  html:not([data-calm]) .doc-skill__item {
+    animation: skill-in linear both;
+    animation-timeline: view();
+    animation-range: entry calc(var(--n) * 4%) entry calc(45% + var(--n) * 4%);
+  }
+}
+
+@keyframes skill-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.45rem);
+    filter: blur(3px);
+  }
+}
+
+@media (max-width: 40rem) {
+  .doc-skill {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .doc .doc-skill__label {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding-top: 0;
+  }
+}
+
+/* A contact line ("Berlin · email · phone · LinkedIn"): one capsule per part,
+   an icon well that says what the part is. A link lights its well and draws
+   its underline; an address you type elsewhere has a copy segment. Plain facts
+   sit quieter than the ways to reach. */
+.doc .doc-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.4rem;
+  font-style: normal;
+}
+
+.doc-contact__item {
+  --well: 1.75rem;
+  display: inline-flex;
+  max-width: 100%;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0) 70%), var(--surface-1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  transition:
+    border-color var(--lit),
+    box-shadow var(--lit),
+    translate var(--lit) var(--spring-snappy);
+}
+
+.doc .doc-contact__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.25rem 0.9rem 0.25rem 0.25rem;
+  border-radius: inherit;
+  color: var(--text);
+  font: 500 0.875rem/1.25 var(--body);
+  text-decoration: none;
+  transition: scale var(--lit-fast) var(--spring-snappy);
+}
+
+.doc-contact__item:is([data-kind="place"], [data-kind="fact"]) .doc-contact__chip {
+  color: var(--text-2);
+}
+
+.doc-contact__well {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--well);
+  height: var(--well);
+  border-radius: 50%;
+  background: rgb(var(--accent) / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.24);
+  color: var(--accent-ink);
+  transition:
+    background var(--lit-fast),
+    box-shadow var(--lit),
+    color var(--lit-fast);
+}
+
+/* A real mark keeps its own colours: its well is neutral. */
+.doc-contact__item:is([data-kind="linkedin"], [data-kind="github"]) .doc-contact__well {
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: inset 0 0 0 1px var(--hairline-strong);
+  color: var(--text);
+}
+
+.doc-contact__glyph {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.3;
+}
+
+.doc-contact__mark {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* The underline is drawn on hover, from the left. */
+.doc-contact__value {
+  min-width: 0;
+  padding-bottom: 1px;
+  overflow-wrap: anywhere;
+  background: linear-gradient(currentcolor, currentcolor) 0 100% / 0 1px no-repeat;
+  transition: background-size var(--lit) ease-out;
+}
+
+.doc-contact__item[data-kind="phone"] .doc-contact__value {
+  font: 500 0.8125rem/1.25 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.doc-contact__away {
+  flex: none;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-left: -0.2rem;
+  fill: none;
+  stroke: var(--text-3);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+  transition:
+    stroke var(--lit-fast),
+    translate var(--lit) var(--spring-snappy);
+}
+
+.doc-contact__item:has(.doc-contact__copy) .doc-contact__chip {
+  padding-right: 0.7rem;
+}
+
+.doc-contact__copy {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--hairline);
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  background: none;
+  color: var(--text-3);
+  cursor: copy;
+  transition:
+    background var(--lit-fast),
+    color var(--lit-fast),
+    scale var(--lit-fast) var(--spring-snappy);
+}
+
+.doc-contact__copy svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.2;
+}
+
+@media (hover: hover) {
+  .doc-contact__item:has(a:hover, button:hover) {
+    border-color: rgb(var(--accent) / 0.55);
+    box-shadow:
+      0 0.5rem 1.4rem -0.9rem rgb(var(--accent) / 0.55),
+      inset 0 1px 0 rgb(255 255 255 / 0.05);
+    translate: 0 -1px;
+  }
+
+  a.doc-contact__chip:hover .doc-contact__well {
+    background: rgb(var(--accent));
+    box-shadow: 0 0 0 0.25rem rgb(var(--accent) / 0.14);
+    color: var(--on-accent);
+  }
+
+  .doc-contact__item:is([data-kind="linkedin"], [data-kind="github"])
+    a.doc-contact__chip:hover
+    .doc-contact__well {
+    background: rgb(255 255 255 / 0.1);
+    box-shadow: 0 0 0 0.25rem rgb(var(--accent) / 0.14);
+    color: var(--text);
+  }
+
+  a.doc-contact__chip:hover .doc-contact__value {
+    background-size: 100% 1px;
+  }
+
+  a.doc-contact__chip:hover .doc-contact__away {
+    stroke: var(--accent-ink);
+    translate: 2px -2px;
+  }
+
+  .doc-contact__copy:hover {
+    background: rgb(var(--accent) / 0.1);
+    color: var(--accent-ink);
+  }
+}
+
+a.doc-contact__chip:active,
+.doc-contact__copy:active {
+  scale: 0.96;
+}
+
+.doc .doc-contact__chip:focus-visible,
+.doc-contact__copy:focus-visible {
+  outline: var(--focus);
+  outline-offset: 2px;
+}
+
+/* A finger needs a 44 px target. */
+@media (pointer: coarse) {
+  .doc .doc-contact__chip {
+    min-height: 2.75rem;
+    padding-left: 0.45rem;
+  }
+
+  .doc-contact__copy {
+    width: 2.75rem;
+  }
+}
+
+.doc ul,
+.doc ol {
+  padding-left: 1.4rem;
+}
+
+.doc li {
+  margin-top: 0.5rem;
+  padding-left: 0.3rem;
+}
+
+.doc li:first-child {
+  margin-top: 0;
+}
+
+/* The mark of a list is structure: ink, held back. */
+.doc ul > li::marker {
+  color: rgb(var(--accent) / 0.62);
+}
+
+.doc ol > li::marker {
+  color: var(--text-3);
+  font: 500 0.8125em var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A nested list or paragraph sits close to its item. */
+.doc li > ul,
+.doc li > ol,
+.doc li > p {
+  margin-top: 0.5rem;
+}
+
+.doc li > :first-child {
+  margin-top: 0;
+}
+
+.doc li > ul > li::marker {
+  color: var(--text-3);
+}
+
+/* A task: the box is the mark. */
+.doc li[data-task] {
+  list-style: none;
+}
+
+.doc li[data-task] input {
+  width: 0.95em;
+  height: 0.95em;
+  margin: 0 0.6em 0 -1.5em;
+  accent-color: rgb(var(--accent));
+  vertical-align: -0.08em;
+}
+
+.doc blockquote {
+  padding: 0.1rem 0 0.1rem 1.25rem;
+  border-left: 2px solid rgb(var(--accent) / 0.55);
+  color: var(--text-2);
+}
+
+.doc blockquote > :first-child {
+  margin-top: 0;
+}
+
+/* Links in the text. The way between documents has its own (`library.css`). */
+.doc__block a {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--accent) / 0.45);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+.doc__block a:hover {
+  text-decoration-color: currentcolor;
+}
+
+/* ───────────────────────────── Inline code ──────────────────────────── */
+
+/* A calm chip. No glow. */
+.doc code {
+  padding: 0.1em 0.36em;
+  border-radius: var(--radius-s);
+  background: var(--code-bg);
+  color: var(--code-ink);
+  font: 500 0.875em var(--mono);
+  font-variant-ligatures: none;
+  /* File paths have no spaces to break at. */
+  overflow-wrap: anywhere;
+  /* A chip that breaks over two lines is closed on both. */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* A code term takes a click (Echo). It is not a tab stop. */
+.doc code[data-echo] {
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .doc code[data-echo]:hover {
+    background: rgb(var(--accent) / 0.16);
+    color: var(--text);
+  }
+
+  /* Outlined ink in a poster heading: the light fills it with the same ink.
+     The outline goes: its outer half would make the letters heavier and
+     close their counters. */
+  .doc :is(.doc-header__title, .doc-part__title) code[data-echo]:hover {
+    background: none;
+    color: rgb(var(--accent));
+    -webkit-text-stroke-width: 0;
+  }
+}
+
+.doc a code {
+  padding: 0;
+  background: none;
+  color: inherit;
+}
+
+/* A link with no target on this site: a chip that copies its address. */
+.doc-ref {
+  padding: 0.08em 0.4em;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-s);
+  cursor: copy;
+  /* It breaks between words only, also in a table cell that may break
+     anywhere: a break there would leave the icon alone on a line. */
+  overflow-wrap: normal;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.doc-ref[data-short] {
+  white-space: nowrap;
+}
+
+.doc .doc-ref code {
+  padding: 0;
+  background: none;
+}
+
+/* The icon stays with the last word of the chip. */
+.doc-ref__tail {
+  white-space: nowrap;
+}
+
+.doc-ref__icon {
+  width: 0.78em;
+  height: 0.78em;
+  margin-left: 0.4em;
+  overflow: visible;
+  fill: none;
+  stroke: var(--text-3);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.2;
+  vertical-align: -0.04em;
+}
+
+.doc-ref:hover,
+.doc-ref:focus-visible {
+  border-color: rgb(var(--accent) / 0.6);
+}
+
+.doc-ref:hover .doc-ref__icon,
+.doc-ref:focus-visible .doc-ref__icon {
+  stroke: var(--accent-ink);
+}
+
+.doc-ref:active {
+  background: rgb(var(--accent) / 0.12);
+}
+
+/* ───────────────────────────── Code block ───────────────────────────── */
+
+.codeblock {
+  /* The bar's z-index stays inside the card. */
+  isolation: isolate;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-l);
+  background: var(--surface-1);
+}
+
+/* The bar stays with the reader through a long block. */
+.codeblock__bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.75rem;
+  padding: 0 0.5rem 0 1.25rem;
+  border-bottom: 1px solid var(--hairline);
+  border-radius: calc(var(--radius-l) - 1px) calc(var(--radius-l) - 1px) 0 0;
+  background: var(--surface-1);
+  color: var(--text-3);
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.codeblock__meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.codeblock__lang {
+  color: var(--text);
+}
+
+/* A small lamp before the language. */
+.codeblock__lang::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.6rem;
+  border-radius: 50%;
+  background: rgb(var(--accent));
+  vertical-align: 0.06em;
+}
+
+.codeblock__tools {
+  display: flex;
+  flex: none;
+  gap: 0.125rem;
+}
+
+.codeblock__tools button {
+  min-width: 2.75rem;
+  min-height: 2rem;
+  padding: 0 0.7rem;
+  border-radius: var(--radius-s);
+  color: var(--text-2);
+  text-transform: inherit;
+}
+
+.codeblock__tools button:hover {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text);
+}
+
+.codeblock__tools button:active {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.codeblock__tools button[aria-pressed="true"] {
+  background: rgb(var(--accent) / 0.12);
+  color: var(--accent-ink);
+}
+
+.codeblock pre {
+  margin: 0;
+  padding: 1.1rem 1.25rem 1.25rem;
+  overflow-x: auto;
+  border-radius: 0 0 calc(var(--radius-l) - 1px) calc(var(--radius-l) - 1px);
+  color: var(--text);
+  font: 400 0.8125rem/1.6 var(--mono);
+  font-variant-ligatures: none;
+  tab-size: 2;
+}
+
+.codeblock pre:focus-visible {
+  outline-offset: -2px;
+}
+
+.codeblock pre code {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  overflow-wrap: normal;
+}
+
+.codeblock[data-wrap] pre {
+  white-space: pre-wrap;
+}
+
+.codeblock[data-wrap] pre code {
+  overflow-wrap: anywhere;
+}
+
+/* Folded: the first lines, then the light runs out. */
+.codeblock[data-folded] pre {
+  max-height: calc(var(--folded-lines, 22) * 1.6 * 0.8125rem + 1.1rem);
+  overflow-y: hidden;
+  border-radius: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 7rem), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 7rem), transparent);
+}
+
+.codeblock__more {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  border-top: 1px solid var(--hairline);
+  border-radius: 0 0 calc(var(--radius-l) - 1px) calc(var(--radius-l) - 1px);
+  color: var(--text-2);
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.codeblock:not([data-folded]) > pre:not(:last-child) {
+  border-radius: 0;
+}
+
+.codeblock__more:hover {
+  background: rgb(255 255 255 / 0.04);
+  color: var(--text);
+}
+
+.codeblock__more:focus-visible {
+  outline-offset: -2px;
+}
+
+/* A thumb needs more than a pointer does. */
+@media (max-width: 60rem), (hover: none) {
+  .codeblock__bar {
+    padding-left: 1rem;
+  }
+
+  .codeblock__tools button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .codeblock__more {
+    min-height: 3rem;
+  }
+
+  .codeblock pre {
+    padding: 1rem;
+  }
+}
+
+/* ───────────────────────────── Materialise ──────────────────────────── */
+
+/* The first blocks come into the light one after another. `backwards` only:
+   when a block has arrived, nothing of the animation is left on it. */
+.doc__block[data-reveal] {
+  animation: materialise 420ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  animation-delay: calc(650ms + var(--i) * 45ms);
+}
+
+@keyframes materialise {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+/* ───────────────────────────── Less motion ──────────────────────────── */
+
+html[data-calm] .doc__block[data-reveal] {
+  animation: none;
+}
+
+html[data-calm] .doc-part :is(.doc-part__eyebrow, .doc-part__title),
+html[data-calm] .doc__block[data-depth="1"]::before {
+  transition: none;
+}
+
+html[data-calm] .doc-chip::after,
+html[data-calm] .doc-anchor,
+html[data-calm] .doc-contact :is(*, *::before) {
+  transition: none;
+}
+
+html[data-calm] .doc-contact__item {
+  translate: none;
+}
+
+html[data-calm] .doc-skill :is(*, *::before) {
+  transition: none;
+}
+
+html[data-calm] .doc .doc-skill__item {
+  translate: none;
+}
+
+/* The live dot glows and stays still. */
+html[data-calm] .doc-meta__badge[data-ongoing]::after {
+  animation: none;
+  box-shadow: 0 0 0.35rem rgb(var(--accent) / 0.6);
+}

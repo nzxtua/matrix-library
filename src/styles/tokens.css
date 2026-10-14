@@ -1,0 +1,482 @@
+/* Owner: foundation (shared, frozen). Tokens, vibes, base rules and the few
+   effects every part uses. A need here goes into the owner's report. */
+
+/* Fonts are bundled npm packages: no network call leaves the site. */
+@import "@fontsource-variable/anybody/wdth.css";
+@import "@fontsource-variable/instrument-sans/wght.css";
+@import "@fontsource-variable/instrument-sans/wght-italic.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
+
+/* ─────────────────────────────── Tokens ─────────────────────────────── */
+
+:root {
+  color-scheme: dark;
+  --void: #000; /* Enter page only */
+  --bg: #09090c; /* content page */
+  --surface-1: #101116; /* cards: tables, code, panel */
+  --surface-2: #181a21; /* raised: dialogs, popovers, keycaps, toast */
+  --hairline: rgb(255 255 255 / 0.08);
+  --hairline-strong: rgb(255 255 255 / 0.16);
+  --text: #e4e6df; /* body, 15:1 on --bg */
+  --text-2: #a3a79c; /* secondary */
+  --text-3: #7e8279; /* meta, 11 px and up only */
+
+  /* The vibe. Triplets, used as rgb(var(--accent) / a). */
+  --accent: 204 255 0; /* fluorescent ink */
+  --accent-2: 255 61 219; /* second ink */
+  --haze: 143 0 255; /* the colour of the light itself; never text */
+  --accent-ink: #d6ff3d; /* accent that is safe as text on --bg */
+  --on-accent: #0b0c06; /* text on a filled accent chip */
+
+  --code-ink: color-mix(in oklab, rgb(var(--accent)) 26%, var(--text));
+  --code-bg: rgb(var(--accent) / 0.07);
+
+  --display: "Anybody Variable", "Arial Narrow", Impact, sans-serif;
+  --body:
+    "Instrument Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --radius-l: 16px;
+  --radius-pill: 999px;
+  --focus: 2px solid rgb(var(--accent));
+
+  --lit-fast: 120ms;
+  --lit: 240ms;
+  --spring-snappy: linear(
+    0,
+    0.069,
+    0.223,
+    0.406,
+    0.582,
+    0.732,
+    0.848,
+    0.932,
+    0.987,
+    1.019,
+    1.035,
+    1.039,
+    1.037,
+    1.031,
+    1.023,
+    1.017,
+    1.011,
+    1.006,
+    1.003,
+    1.001,
+    1
+  );
+  --spring-bouncy: linear(
+    0,
+    0.063,
+    0.219,
+    0.418,
+    0.625,
+    0.811,
+    0.962,
+    1.069,
+    1.135,
+    1.164,
+    1.164,
+    1.145,
+    1.114,
+    1.08,
+    1.046,
+    1.018,
+    0.996,
+    0.982,
+    0.974,
+    0.972,
+    0.974,
+    0.978,
+    0.984,
+    0.99,
+    0.995,
+    0.999,
+    1
+  );
+
+  /* z scale */
+  --z-panel: 10;
+  --z-dock: 40;
+  --z-ruler: 45;
+  --z-pop: 50;
+  --z-rain: 60;
+  --z-toast: 80;
+}
+
+/* ──────────────────────────────── Vibes ─────────────────────────────── */
+
+/* Named after light sources. `prefs.ts` writes `data-vibe` on <html>; the
+   rain takes the same colours from `lib/vibes.ts`. The two must agree. */
+
+html[data-vibe="ultraviolet"] {
+  --accent: 204 255 0;
+  --accent-2: 255 61 219;
+  --haze: 143 0 255;
+  --accent-ink: #d6ff3d;
+  --on-accent: #0b0c06;
+}
+
+html[data-vibe="phosphor"] {
+  --accent: 0 255 102;
+  --accent-2: 141 255 187;
+  --haze: 0 255 102;
+  --accent-ink: #86e8ab;
+  --on-accent: #03130a;
+}
+
+html[data-vibe="sodium"] {
+  --accent: 255 176 0;
+  --accent-2: 255 94 58;
+  --haze: 255 140 0;
+  --accent-ink: #ffc247;
+  --on-accent: #140c00;
+}
+
+html[data-vibe="cryo"] {
+  --accent: 120 230 255;
+  --accent-2: 167 139 250;
+  --haze: 0 170 255;
+  --accent-ink: #9eeaff;
+  --on-accent: #03111a;
+}
+
+/* Text size. Everything is in rem. */
+html[data-size="s"] {
+  font-size: 93.75%;
+}
+
+html[data-size="m"] {
+  font-size: 100%;
+}
+
+html[data-size="l"] {
+  font-size: 112.5%;
+}
+
+/* ───────────────────────────────── Base ─────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* A jump is always instant: no smooth scrolling anywhere. */
+  scroll-behavior: auto;
+  scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  overscroll-behavior: none;
+  background: var(--void);
+}
+
+body {
+  color: var(--text);
+  font: 420 1rem/1.5 var(--body);
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(var(--accent) / 0.85);
+  color: var(--on-accent);
+}
+
+/* One visible focus ring for every control. */
+:focus-visible {
+  outline: var(--focus);
+  outline-offset: 2px;
+}
+
+/* A target of `jumpTo({ focus: true })` is not a control: no ring. */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
+/* Controls take the type of the place they sit in. */
+button,
+input,
+select,
+textarea {
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+/* The unstyled button and field. Zero specificity: any class wins. */
+:where(button) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  cursor: pointer;
+}
+
+:where(input, textarea) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+:where(button:disabled, [aria-disabled="true"]) {
+  cursor: default;
+}
+
+:where(dialog) {
+  color: inherit;
+}
+
+/* For a screen reader only. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ────────────────────────────── Page shell ──────────────────────────── */
+
+/* The content page (`ContentPage.tsx`): document | minimap | panel. It
+   isolates, so bullet time (`bullet-time.css`) sits over its colour and under
+   its blocks. */
+.doc-page {
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px 19rem;
+  align-items: start;
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+.doc-page > .doc {
+  grid-column: 1;
+}
+
+.doc-page > .minimap {
+  grid-column: 2;
+}
+
+.doc-page > .panel {
+  grid-column: 3;
+}
+
+/* A jump stops with a little air above the target. Zero specificity. */
+:where(.doc__block, .doc__block [id]) {
+  scroll-margin-top: 1.5rem;
+}
+
+/* The page stays dark until the rain starts to fall away. */
+.doc-page[data-intro] {
+  animation: fade-in 900ms ease-out 600ms both;
+}
+
+/* The rain the page opens under. It never takes a click. */
+.doc-rain {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-rain);
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* The one fade: from nothing to what the element is. Every "lit" entrance uses it. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Below 60rem: one column. The minimap is gone and the dock is a bottom bar.
+   The panel is hidden in panel.css; the sheet carries the navigation. */
+@media (max-width: 60rem) {
+  .doc-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .doc-page > .doc {
+    grid-column: 1;
+  }
+
+  .doc-page > .minimap {
+    display: none;
+  }
+}
+
+/* ──────────────────────────────── Ping ──────────────────────────────── */
+
+/* The one attention effect: a ring that expands from the target and fades in
+   900 ms. `ping()` in `lib/jump.ts` sets `data-ping` and the two scales, so
+   the ring ends 14 px outside a target of any size. */
+:where([data-ping]) {
+  position: relative;
+}
+
+[data-ping]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 2px solid rgb(var(--accent));
+  border-radius: var(--radius-s);
+  opacity: 0;
+  pointer-events: none;
+  animation: ping 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes ping {
+  from {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(var(--ping-sx, 1.03), var(--ping-sy, 1.3));
+  }
+}
+
+/* Calm: the ring lights up in place and fades. */
+@keyframes ping-calm {
+  from {
+    opacity: 0.95;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+/* ───────────────────────────── Highlights ───────────────────────────── */
+
+/* Painted by `lib/highlight.ts`. Search hits are solid ink; echo places are
+   the second ink, so both can show at once. */
+::highlight(search) {
+  background-color: rgb(var(--accent));
+  color: var(--on-accent);
+}
+
+::highlight(echo) {
+  background-color: rgb(var(--accent-2) / 0.34);
+  color: #fff;
+}
+
+/* ──────────────────────────────── Toast ─────────────────────────────── */
+
+/* One polite line at the bottom (`components/Toast.tsx`). */
+.toast {
+  position: fixed;
+  z-index: var(--z-toast);
+  max-width: calc(100vw - 2rem);
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text);
+  font: 500 0.75rem/1.4 var(--mono);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  /* It is a manual popover (top layer): undo the popover defaults. */
+  inset: auto auto calc(5.5rem + env(safe-area-inset-bottom, 0px)) 50%;
+  margin: 0;
+  overflow: visible;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) scale(0.96);
+  transition:
+    opacity var(--lit-fast) ease-out,
+    transform var(--lit-fast) ease-out;
+}
+
+.toast[data-show] {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+  transition:
+    opacity var(--lit) ease-out,
+    transform 420ms var(--spring-snappy);
+}
+
+.toast::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.6rem;
+  border-radius: 50%;
+  background: rgb(var(--accent));
+  vertical-align: 0.08em;
+}
+
+/* ──────────────────────────── Vibe switch ───────────────────────────── */
+
+/* `setVibe(id, origin)` in `lib/vibes.ts`: the new light spreads as a circle
+   from the origin. The old page stays still under it. */
+html[data-vt="vibe"]::view-transition-old(root),
+html[data-vt="vibe"]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html[data-vt="vibe"]::view-transition-old(root) {
+  z-index: 1;
+}
+
+html[data-vt="vibe"]::view-transition-new(root) {
+  z-index: 2;
+  animation: vibe-reveal var(--vt-ms, 620ms) cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+
+@keyframes vibe-reveal {
+  from {
+    clip-path: circle(0 at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+
+  to {
+    clip-path: circle(var(--vt-r, 150vmax) at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+}
+
+/* ───────────────────────────── Less motion ──────────────────────────── */
+
+/* The system setting and the "calm" preference get the same treatment.
+   Every part repeats this pair for its own rules. */
+html[data-calm] .doc-page[data-intro] {
+  animation: none;
+}
+
+html[data-calm] [data-ping]::after {
+  animation-name: ping-calm;
+}
+
+html[data-calm] .toast,
+html[data-calm] .toast[data-show] {
+  transform: translateX(-50%);
+  transition: opacity var(--lit-fast) linear;
+}
+
+html[data-calm][data-vt="vibe"]::view-transition-new(root) {
+  animation: none;
+}
