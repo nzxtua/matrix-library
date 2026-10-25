@@ -1,0 +1,812 @@
+/* Owner: panel. The panel shell and its logo, the navigation (`SectionNav`)
+   and the comfort settings (`Comfort`).
+
+   `.section-nav` and `.comfort` are also rendered inside the sheet: none of
+   their rules depends on `.panel`. What only the panel wants is written as
+   `.panel > …` at the end of each part. */
+
+/* ─────────────────────────────── Panel ──────────────────────────────── */
+
+/* The sticky column on the right: logo, then navigation, then comfort. */
+.panel {
+  --panel-pad: 1.25rem;
+
+  position: sticky;
+  top: 0;
+  z-index: var(--z-panel);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding: 1.5rem var(--panel-pad) 1rem;
+  border-left: 1px solid var(--hairline);
+  background: var(--surface-1);
+}
+
+/* Below 60rem the dock and the sheet carry the navigation and the settings. */
+@media (max-width: 60rem) {
+  .panel {
+    display: none;
+  }
+}
+
+/* ──────────────────────────────── Logo ──────────────────────────────── */
+
+/* The link home. A short window gets a smaller logo, so the navigation
+   keeps its room. The ASCII art sizes its characters from this width. */
+.panel__logo {
+  /* Where the beam is, from the top left corner of the art. Written by
+     `Panel.tsx` on this element, once per frame. */
+  --beam-x: 50%;
+  --beam-y: 50%;
+
+  display: block;
+  flex: none;
+  container-type: inline-size;
+  inline-size: clamp(5.5rem, 28vh - 6.5rem, 100%);
+  margin: 0 auto 1rem;
+  border-radius: var(--radius-m);
+  color: rgb(var(--accent));
+  text-decoration: none;
+}
+
+.panel__logo:focus-visible {
+  outline-offset: 6px;
+}
+
+/* The 3D logo (`LogoStage.tsx`, `lib/logo-stage.ts`): the picture's own
+   shape, so the relief stands where the picture would. The canvas is larger:
+   the width of the panel, from its top to a little below the logo, so the
+   pool of the torch stays round. `logo-stage.ts` writes its place and size.
+   It draws only ink and light; the panel shows through everywhere else. */
+.logo3d {
+  position: relative;
+  aspect-ratio: var(--logo-aspect, 1);
+  width: 100%;
+}
+
+.logo3d__canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--lit) ease-out;
+}
+
+.logo3d[data-ready] .logo3d__canvas {
+  opacity: 1;
+}
+
+/* The ASCII logo, without WebGL: fluorescent ink in the dark. It is there,
+   but not lit. */
+.ascii {
+  position: relative;
+  isolation: isolate;
+  width: max-content;
+  margin: 0 auto;
+  /* Sized so `--columns` characters fill the container: a monospace character
+     is 0.6em wide (`CELL_ASPECT` in ascii-art.ts). Line height 1 is what
+     ascii-art.ts assumes. */
+  font: 700 calc(100cqi / var(--columns) / 0.6) / 1 var(--mono);
+  color: rgb(var(--accent) / 0.58);
+  opacity: 0;
+  user-select: none;
+  transition: opacity var(--lit) ease-out;
+}
+
+.ascii[data-ready] {
+  opacity: 1;
+}
+
+/* The same art again, drawn only where the beam is: white at the centre of
+   the beam, full ink around it, nothing outside. */
+.ascii__lit {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle 42cqi at var(--beam-x) var(--beam-y),
+    #fff 0%,
+    rgb(var(--accent)) 34%,
+    rgb(var(--accent) / 0) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--lit) ease-out;
+}
+
+/* The light itself: a disc of haze behind the art. Its box reaches past the
+   art further than the disc's radius (40cqi), so the disc fades out in full
+   and is never cut straight where the pointer is near an edge. */
+.ascii::before {
+  --reach: 46cqi;
+
+  content: "";
+  position: absolute;
+  inset: calc(var(--reach) * -1);
+  z-index: -1;
+  background: radial-gradient(
+    circle 40cqi at calc(var(--beam-x) + var(--reach)) calc(var(--beam-y) + var(--reach)),
+    rgb(var(--haze) / 0.3) 0%,
+    rgb(var(--haze) / 0.12) 45%,
+    rgb(var(--haze) / 0) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--lit) ease-out;
+}
+
+.panel__logo[data-beam] .ascii__lit,
+.panel__logo[data-beam] .ascii::before {
+  opacity: 1;
+  transition-duration: var(--lit-fast);
+}
+
+/* The ring of a glyph storm (`lib/glyph-storm.ts`): only the scrambled
+   characters, hot white-ink with a glow of the light around them. Written
+   by `AsciiImage.tsx`; empty when no wave runs. */
+.ascii__spark {
+  position: absolute;
+  inset: 0;
+  color: color-mix(in srgb, rgb(var(--accent)) 60%, #fff);
+  text-shadow:
+    0 0 0.35em rgb(var(--accent) / 0.9),
+    0 0 1.2em rgb(var(--haze) / 0.75);
+  pointer-events: none;
+}
+
+/* The keyboard has no beam to aim: the focus lights the whole logo. */
+.panel__logo:focus-visible .ascii__lit {
+  background: rgb(var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: 1;
+}
+
+/* ───────────────────────────── Navigation ───────────────────────────── */
+
+.section-nav {
+  /* Room on both sides of a row. The rail and the "changed" dot sit in it. */
+  --nav-gutter: 1.25rem;
+
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--hairline-strong) transparent;
+  scrollbar-width: thin;
+}
+
+.section-nav ol {
+  margin: 0;
+  padding: 0.25rem 0 0.75rem;
+  list-style: none;
+}
+
+/* One row: [chip] title … minutes ring. */
+.section-nav__row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  /* The space above the first line, and the height of a line. */
+  --row-pad: 0.375rem;
+  --row-line: 1.25rem;
+
+  gap: 0.625rem;
+  min-height: 2rem;
+  padding: var(--row-pad) var(--nav-gutter);
+  color: var(--text-2);
+  font-size: 0.8125rem;
+  line-height: var(--row-line);
+  text-decoration: none;
+  transition:
+    color var(--lit-fast) ease-out,
+    background-color var(--lit-fast) ease-out;
+}
+
+.section-nav__row:hover {
+  background: rgb(255 255 255 / 0.035);
+  color: var(--text);
+}
+
+.section-nav__row:focus-visible {
+  /* The list clips what is outside of it. */
+  outline-offset: -2px;
+  border-radius: var(--radius-s);
+}
+
+.section-nav__row[data-current] {
+  color: var(--text);
+}
+
+/* The rail of the current row: 2 px of ink on the left edge. It is lit, not moved. */
+.section-nav__row::before {
+  content: "";
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  left: 0;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: rgb(var(--accent));
+  opacity: 0;
+  transition: opacity var(--lit) ease-out;
+}
+
+.section-nav__row[data-current]::before {
+  opacity: 1;
+}
+
+/* The chip with the code of the section. Every chip is as wide as the longest. */
+.section-nav__code {
+  flex: none;
+  box-sizing: content-box;
+  min-width: calc(var(--code-length, 2) * 0.6em);
+  padding: 0 0.375rem;
+  border-radius: 5px;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  font: 500 0.6875rem/1.25rem var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+  transition:
+    color var(--lit-fast) ease-out,
+    background-color var(--lit-fast) ease-out;
+}
+
+/* A section without a code keeps the column, so the titles stay aligned. */
+.section-nav__code[data-empty] {
+  background: none;
+}
+
+.section-nav__row[data-current] .section-nav__code:not([data-empty]) {
+  background: rgb(var(--accent));
+  color: var(--on-accent);
+}
+
+.section-nav__title {
+  flex: 1;
+  min-width: 0;
+  /* A long title takes a second line and stops there. */
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+.section-nav__time {
+  flex: none;
+  color: var(--text-3);
+  font: 500 0.6875rem/1.25rem var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The read ring. The arc is the share of the section the reader has read. */
+.section-nav__ring {
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-top: 0.1875rem;
+  overflow: visible;
+  fill: none;
+  stroke-width: 2;
+}
+
+.section-nav__ring-track {
+  stroke: var(--hairline-strong);
+}
+
+.section-nav__ring-fill {
+  stroke: rgb(var(--accent));
+  transform: rotate(-90deg);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* A section read to the end: the ring closes and its centre lights. */
+.section-nav__ring-core {
+  fill: rgb(var(--accent));
+  stroke: none;
+  transform: scale(0);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 420ms var(--spring-bouncy);
+}
+
+.section-nav__ring[data-done] .section-nav__ring-core {
+  transform: scale(1);
+}
+
+/* "Changed since you were here": a dot of the second ink in the gutter. */
+.section-nav__changed {
+  position: absolute;
+  top: calc(var(--row-pad) + var(--row-line) / 2 - 2.5px);
+  left: calc(var(--nav-gutter) / 2 - 1.5px);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgb(var(--accent-2));
+}
+
+/* Parts and the title of the document: mono eyebrows over their sections. */
+.section-nav__row:is([data-kind="part"], [data-kind="title"]) {
+  /* Two lines of capitals sit closer than two lines of a title. */
+  --row-pad: 0.5rem;
+  --row-line: 1rem;
+
+  color: var(--text-3);
+  font: 500 0.6875rem / var(--row-line) var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.section-nav__row:is([data-kind="part"], [data-kind="title"]) .section-nav__ring {
+  margin-top: 0.0625rem;
+}
+
+.section-nav li:has(> [data-kind="part"]) {
+  margin-top: 0.75rem;
+}
+
+.section-nav li:first-child {
+  margin-top: 0;
+}
+
+.section-nav__row:is([data-kind="part"], [data-kind="title"]):hover,
+.section-nav__row:is([data-kind="part"], [data-kind="title"])[data-current] {
+  color: var(--text);
+}
+
+.section-nav__part {
+  margin-right: 0.75em;
+  color: var(--text-2);
+}
+
+.section-nav__row:is(:hover, [data-current]) .section-nav__part {
+  color: inherit;
+}
+
+.section-nav__row:is([data-kind="part"], [data-kind="title"]) .section-nav__time {
+  line-height: var(--row-line);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* A finger needs more row than a pointer. */
+@media (max-width: 60rem), (pointer: coarse) {
+  .section-nav__row {
+    --row-pad: 0.75rem;
+
+    min-height: 2.75rem;
+    font-size: 0.9375rem;
+  }
+
+  .section-nav__row:is([data-kind="part"], [data-kind="title"]) {
+    --row-pad: 0.875rem;
+
+    font-size: 0.6875rem;
+  }
+
+  .section-nav li:has(> [data-kind="part"]) {
+    margin-top: 0.25rem;
+  }
+}
+
+/* In the panel the list takes the room that is left and runs from edge to
+   edge, so the rail of the current row lights the edge of the panel. */
+.panel > .section-nav {
+  flex: 1;
+  margin-inline: calc(var(--panel-pad) * -1);
+  /* The list goes dark toward its edges: there is more under them. */
+  mask-image: linear-gradient(transparent, #000 1rem, #000 calc(100% - 1.75rem), transparent);
+}
+
+.panel > .section-nav ol {
+  padding: 0.75rem 0 1.5rem;
+}
+
+/* ─────────────────────────────── Comfort ────────────────────────────── */
+
+/* It lays itself out by its own width: lamps with a caption when narrow (the
+   panel), lamps with their names when there is room (the sheet). */
+.comfort {
+  container: comfort / inline-size;
+  display: grid;
+  gap: 0.625rem;
+}
+
+.comfort__label {
+  color: var(--text-3);
+  font: 500 0.6875rem/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.comfort__row,
+.comfort__light {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+}
+
+/* The four lamps. */
+.lamps {
+  display: flex;
+  gap: 0.25rem;
+  /* The lamps line up with the edge of the segments under them. */
+  margin-right: -0.3125rem;
+}
+
+.lamp {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.lamp:has(input:focus-visible) {
+  outline: var(--focus);
+  outline-offset: -2px;
+}
+
+.lamp__dot {
+  position: relative;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  background: var(--swatch);
+  opacity: 0.45;
+  transition:
+    opacity var(--lit-fast) ease-out,
+    transform 320ms var(--spring-bouncy);
+}
+
+.lamp:hover .lamp__dot {
+  opacity: 0.85;
+}
+
+.lamp:active .lamp__dot {
+  transform: scale(0.8);
+}
+
+.lamp:has(input:checked) .lamp__dot {
+  opacity: 1;
+}
+
+/* The lamp that is on: a ring around it, and its own glow. */
+.lamp__dot::after {
+  content: "";
+  position: absolute;
+  inset: -0.3125rem;
+  border: 1.5px solid var(--swatch);
+  border-radius: 50%;
+  box-shadow: 0 0 0.875rem 0 color-mix(in srgb, var(--swatch) 55%, transparent);
+  opacity: 0;
+  transition: opacity var(--lit) ease-out;
+}
+
+.lamp:has(input:checked) .lamp__dot::after {
+  opacity: 1;
+}
+
+/* A lamp that is not found yet: an empty socket. */
+.lamp[data-locked] .lamp__dot {
+  border: 1.5px dashed var(--text-3);
+  background: none;
+  opacity: 1;
+}
+
+.lamp[data-locked]:hover .lamp__dot {
+  border-color: var(--text-2);
+}
+
+/* Narrow: the names are for a screen reader; the caption shows them. */
+.lamp__name,
+.lamp__count {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The caption: the lamp under the pointer or the focus, else the one that is on. */
+.comfort__note {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  gap: 0 0.5rem;
+  /* Air around the line, for the ring of a ping. It takes no room. */
+  min-height: 1.375rem;
+  margin: -0.125rem -0.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-s);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+
+.comfort__note-name {
+  color: var(--accent-ink);
+  font: 500 0.6875rem/1.125rem var(--mono);
+}
+
+.comfort__note-count {
+  color: var(--text-3);
+  font: 500 0.6875rem/1.125rem var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A few choices in a row, with a thumb on the chosen one. */
+.segments {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--count), minmax(0, 1fr));
+  width: 7.5rem;
+  padding: 2px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: rgb(255 255 255 / 0.03);
+}
+
+.segments__thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / var(--count));
+  border: 1px solid rgb(var(--accent) / 0.4);
+  border-radius: var(--radius-pill);
+  background: rgb(var(--accent) / 0.1);
+  transform: translateX(calc(var(--index) * 100%));
+  transition: transform 360ms var(--spring-snappy);
+}
+
+.segments__option {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 1.625rem;
+  border-radius: var(--radius-pill);
+  color: var(--text-3);
+  font: 500 0.6875rem/1 var(--mono);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color var(--lit-fast) ease-out;
+}
+
+.segments__option:hover {
+  color: var(--text);
+}
+
+.segments__option:has(input:checked) {
+  color: var(--accent-ink);
+}
+
+.segments__option:has(input:focus-visible) {
+  outline: var(--focus);
+  outline-offset: 1px;
+}
+
+/* "Clear my data": the question, then the answer, on the same line. */
+.comfort__clear {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 1.75rem;
+  color: var(--text-2);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+.comfort__clear-ask {
+  border-radius: var(--radius-s);
+  color: var(--text-3);
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--hairline-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+  transition: color var(--lit-fast) ease-out;
+}
+
+.comfort__clear-ask:hover {
+  color: var(--text);
+}
+
+.comfort__clear-text {
+  margin-right: auto;
+}
+
+.comfort__answer {
+  min-width: 3.25rem;
+  min-height: 1.625rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  color: var(--text-2);
+  font: 500 0.6875rem/1 var(--mono);
+  letter-spacing: 0.06em;
+  transition:
+    color var(--lit-fast) ease-out,
+    transform 320ms var(--spring-snappy);
+}
+
+.comfort__answer:hover {
+  color: var(--text);
+}
+
+.comfort__answer:active {
+  transform: scale(0.95);
+}
+
+/* The answer that cannot be taken back is in the second ink. */
+.comfort__answer[data-clear] {
+  border-color: rgb(var(--accent-2) / 0.7);
+  color: var(--text);
+}
+
+/* The question is lit, not moved in. */
+.comfort__clear[data-armed] > * {
+  animation: fade-in var(--lit) ease-out both;
+}
+
+/* With room (the sheet): every lamp is a pill with its name, in two columns,
+   and every control is a full touch target. */
+@container comfort (min-width: 19rem) {
+  .comfort {
+    gap: 1rem;
+  }
+
+  .comfort__light {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.625rem;
+  }
+
+  .lamps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-right: 0;
+  }
+
+  .lamp {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: auto;
+    height: auto;
+    min-height: 2.75rem;
+    padding: 0 0.875rem 0 1rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-m);
+    transition: border-color var(--lit-fast) ease-out;
+  }
+
+  .lamp:has(input:checked) {
+    border-color: color-mix(in srgb, var(--swatch) 55%, transparent);
+  }
+
+  .lamp:has(input:focus-visible) {
+    outline-offset: 2px;
+  }
+
+  .lamp__name,
+  .lamp__count {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    font: 500 0.75rem/1 var(--mono);
+  }
+
+  .lamp__name {
+    color: var(--text-2);
+  }
+
+  .lamp:has(input:checked) .lamp__name {
+    color: var(--text);
+  }
+
+  .lamp__count {
+    margin-left: auto;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The pills carry the names. */
+  .comfort__note-name,
+  .comfort__note-count {
+    display: none;
+  }
+
+  .comfort__note {
+    font-size: 0.8125rem;
+  }
+
+  .segments {
+    width: 11.5rem;
+  }
+
+  .segments__option {
+    min-height: 2.75rem;
+    font-size: 0.75rem;
+  }
+
+  .comfort__clear {
+    min-height: 2.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .comfort__clear-ask {
+    min-height: 2.75rem;
+  }
+
+  .comfort__answer {
+    min-width: 4rem;
+    min-height: 2.75rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* In the panel: the footer, under a hairline. */
+.panel > .comfort {
+  flex: none;
+  padding-top: 1rem;
+  border-top: 1px solid var(--hairline);
+}
+
+/* A short window: the frame gives its room to the list. */
+@media (max-height: 50rem) {
+  .panel {
+    padding-block: 1rem 0.75rem;
+  }
+
+  .panel__logo {
+    margin-bottom: 0.5rem;
+  }
+
+  .panel > .comfort {
+    gap: 0.375rem;
+    padding-top: 0.75rem;
+  }
+}
+
+/* ───────────────────────────── Less motion ──────────────────────────── */
+
+/* The system setting and the "calm" preference get the same treatment.
+   Nothing springs and nothing follows the pointer: the pointer lights the
+   whole logo, the thumb and the ring core are in place at once. No glyph
+   storm runs (`AsciiImage.tsx` checks the same attribute). */
+html[data-calm] .panel__logo:hover .ascii__lit {
+  background: rgb(var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: 1;
+}
+
+html[data-calm] :is(.segments__thumb, .section-nav__ring-core, .lamp__dot, .comfort__answer) {
+  transition-property: opacity, color;
+}
+
+html[data-calm] :is(.lamp:active .lamp__dot, .comfort__answer:active) {
+  transform: none;
+}
+
+html[data-calm] .comfort__clear[data-armed] > * {
+  animation: none;
+}

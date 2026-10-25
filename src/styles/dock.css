@@ -1,0 +1,1108 @@
+/* Owner: dock. ProgressLine, Dock, Sheet, Keymap, Resume.
+
+   The dock is the light the reader keeps after ENTER: one solid pill at the
+   bottom centre of the document column. Below 60rem the same element is a
+   solid bottom bar. Nothing here slides: things fade and get lit. */
+
+/* ─────────────────────────────── Shared ─────────────────────────────── */
+
+.icon {
+  display: block;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.keycaps {
+  display: inline-flex;
+  flex: none;
+  gap: 0.1875rem;
+}
+
+.keycap {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.375rem;
+  height: 1.375rem;
+  padding: 0 0.3125rem;
+  border: 1px solid var(--hairline-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-s);
+  background: rgb(255 255 255 / 0.05);
+  color: var(--text-2);
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ⌘ ⇧ ↵: the signs of the system font are larger and clearer. */
+.keycap[data-symbol] {
+  font-family: system-ui, sans-serif;
+  font-size: 0.8125rem;
+}
+
+/* The read share. The arc starts at twelve o'clock. */
+.ring {
+  display: block;
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.ring circle {
+  fill: none;
+  stroke-width: 4;
+}
+
+.ring__track {
+  stroke: var(--hairline-strong);
+}
+
+.ring__value {
+  stroke: rgb(var(--accent));
+  stroke-linecap: round;
+}
+
+/* One glow each time the share grows. */
+.ring__flash {
+  stroke: rgb(var(--accent));
+  stroke-linecap: round;
+  opacity: 0;
+  filter: drop-shadow(0 0 3px rgb(var(--accent)));
+  animation: ring-flash 900ms ease-out;
+}
+
+/* Every room is lit: the ring stays on. */
+.ring[data-done] {
+  filter: drop-shadow(0 0 0.25rem rgb(var(--accent) / 0.7));
+}
+
+@keyframes ring-flash {
+  from {
+    opacity: 1;
+  }
+}
+
+.dialog-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-pill);
+  color: var(--text-2);
+}
+
+.dialog-close:hover {
+  background: rgb(255 255 255 / 0.07);
+  color: var(--text);
+}
+
+/* ──────────────────────────── Progress line ─────────────────────────── */
+
+/* Over the document and the minimap. It stops where the panel starts. */
+.progress-line {
+  position: fixed;
+  top: 0;
+  right: 19rem;
+  left: 0;
+  z-index: var(--z-dock);
+  height: 2px;
+  pointer-events: none;
+}
+
+.progress-line__fill {
+  height: 100%;
+  background: rgb(var(--accent));
+  box-shadow: 0 0 0.625rem rgb(var(--accent) / 0.55);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+/* ───────────────────────────────── Dock ─────────────────────────────── */
+
+/* Places the pill in the document column: not over the minimap or the panel. */
+.dock-slot {
+  position: fixed;
+  right: calc(19rem + 28px);
+  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  z-index: var(--z-dock);
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
+  pointer-events: none;
+}
+
+/* The torch darkens everything up to the map (`torch.css`). The dock stays
+   lit above the dark: it is how the reader puts the torch away. */
+.dock-slot[data-torch] {
+  z-index: calc(var(--z-dock) + 3);
+}
+
+.dock {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  height: 3rem;
+  padding: 0 0.3125rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.5),
+    0 0.75rem 2.5rem rgb(0 0 0 / 0.6);
+  pointer-events: auto;
+  transition:
+    opacity var(--lit) ease-out,
+    transform var(--lit) ease-out;
+}
+
+/* The light of the pointer on the pill (`--mx` is written on the pill). */
+.dock::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(
+    7rem 3.25rem at var(--mx, 50%) 100%,
+    rgb(var(--accent) / 0.2),
+    transparent 72%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--lit) ease-out;
+}
+
+.dock:hover::before {
+  opacity: 1;
+}
+
+/* Over the light. */
+.dock > * {
+  position: relative;
+}
+
+/* The reader scrolls down: the dock leaves. The keyboard focus keeps it. */
+.dock[data-away]:not(:has(:focus-visible)) {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.96);
+}
+
+.dock__where {
+  display: none;
+}
+
+.dock__search {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 15.5rem;
+  height: 2.25rem;
+  padding: 0 0.4375rem 0 0.75rem;
+  border-radius: var(--radius-pill);
+  background: rgb(255 255 255 / 0.05);
+  color: var(--text-2);
+  font: 450 0.875rem/1 var(--body);
+}
+
+.dock__search:hover {
+  background: rgb(255 255 255 / 0.09);
+  color: var(--text);
+}
+
+.dock__search-label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.dock__rule {
+  flex: none;
+  width: 1px;
+  height: 1.25rem;
+  margin: 0 0.375rem;
+  background: var(--hairline-strong);
+}
+
+.dock__tool {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-pill);
+  color: var(--text-2);
+  transition: transform 320ms var(--spring-snappy);
+}
+
+/* Inside the pill, clear of the rules next to it. */
+.dock__tool:focus-visible {
+  outline-offset: 1px;
+}
+
+.dock__tool:hover {
+  background: rgb(255 255 255 / 0.07);
+  color: var(--text);
+}
+
+.dock__tool:active {
+  transform: scale(0.9);
+}
+
+.dock__tool[aria-pressed="true"],
+.dock__tool[aria-expanded="true"] {
+  background: rgb(var(--accent) / 0.13);
+  color: var(--accent-ink);
+}
+
+.dock__glyph {
+  font: 600 0.9375rem/1 var(--mono);
+}
+
+.dock__read {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.25rem;
+  padding: 0 0.375rem 0 0.5rem;
+  color: var(--text-2);
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+/* Room for "100%": the pill keeps its width while the share grows. */
+.dock__percent {
+  min-width: 4ch;
+}
+
+/* The name of a tool and its key, over the pill. */
+.dock__tip {
+  position: absolute;
+  bottom: calc(100% + 0.875rem);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2rem;
+  padding: 0 0.3125rem 0 0.625rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.5);
+  color: var(--text);
+  font: 500 0.6875rem/1 var(--mono);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  translate: -50% 0;
+  transition: opacity var(--lit-fast) ease-out;
+}
+
+.dock__read .dock__tip {
+  padding-right: 0.625rem;
+}
+
+.dock__tool:hover .dock__tip,
+.dock__read:hover .dock__tip {
+  opacity: 1;
+  transition-delay: 320ms;
+}
+
+.dock__tool:focus-visible .dock__tip {
+  opacity: 1;
+}
+
+/* A phone: a solid bottom bar. The section (it opens the sheet), search. */
+@media (max-width: 60rem) {
+  .progress-line {
+    right: 0;
+  }
+
+  .dock-slot {
+    right: 0;
+    bottom: 0;
+    display: block;
+    padding: 0;
+  }
+
+  .dock,
+  .dock[data-away]:not(:has(:focus-visible)) {
+    gap: 0.25rem;
+    width: 100%;
+    height: auto;
+    padding: 0.375rem max(0.5rem, env(safe-area-inset-right, 0px))
+      calc(0.375rem + env(safe-area-inset-bottom, 0px)) max(0.5rem, env(safe-area-inset-left, 0px));
+    border: 0;
+    border-top: 1px solid var(--hairline-strong);
+    border-radius: 0;
+    box-shadow: none;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  .dock::before {
+    display: none;
+  }
+
+  .dock .dock__desk {
+    display: none;
+  }
+
+  .dock__where {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    height: 3rem;
+    padding: 0 0.5rem 0 0.375rem;
+    border-radius: var(--radius-m);
+    color: var(--text-3);
+    text-align: left;
+  }
+
+  .dock__where:active {
+    background: rgb(255 255 255 / 0.06);
+  }
+
+  .dock__ring {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .dock__ring .ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .dock__ring .ring circle {
+    stroke-width: 2.75;
+  }
+
+  .dock__ring-number {
+    color: var(--text);
+    font: 600 0.6875rem/1 var(--mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dock__where-text {
+    display: grid;
+    flex: 1;
+    gap: 0.1875rem;
+    min-width: 0;
+  }
+
+  .dock__eyebrow {
+    display: flex;
+    gap: 0.625rem;
+    overflow: hidden;
+    color: var(--text-3);
+    font: 500 0.6875rem/1.2 var(--mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .dock__code {
+    color: var(--accent-ink);
+    text-transform: none;
+  }
+
+  .dock__title {
+    overflow: hidden;
+    color: var(--text);
+    font: 550 0.9375rem/1.25 var(--body);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    animation: dock-lit var(--lit) ease-out;
+  }
+
+  .dock__search {
+    flex: none;
+    justify-content: center;
+    width: 3rem;
+    min-width: 0;
+    height: 3rem;
+    padding: 0;
+    border-radius: var(--radius-m);
+    background: none;
+  }
+}
+
+/* A new section name gets lit. */
+@keyframes dock-lit {
+  from {
+    opacity: 0.3;
+  }
+}
+
+/* ─────────────────────────────── Dialogs ────────────────────────────── */
+
+/* The sheet and the key map are native modal dialogs. They fade in and out:
+   `overlay` and `display` wait for the fade where the browser can. */
+.sheet,
+.keymap {
+  padding: 0;
+  overflow: hidden;
+  color: var(--text);
+  opacity: 0;
+  transform: scale(0.985);
+  transition:
+    opacity var(--lit) ease-out,
+    transform var(--lit) ease-out,
+    overlay var(--lit) allow-discrete,
+    display var(--lit) allow-discrete;
+}
+
+.sheet[open],
+.keymap[open] {
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transform: none;
+}
+
+.sheet::backdrop,
+.keymap::backdrop {
+  background: rgb(0 0 0 / 0.64);
+  opacity: 0;
+  transition:
+    opacity var(--lit) ease-out,
+    overlay var(--lit) allow-discrete,
+    display var(--lit) allow-discrete;
+}
+
+.sheet[open]::backdrop,
+.keymap[open]::backdrop {
+  opacity: 1;
+}
+
+@starting-style {
+  .sheet[open],
+  .keymap[open] {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+
+  .sheet[open]::backdrop,
+  .keymap[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* The lit edge: the light reaches the top of the dialog first. */
+.sheet::before,
+.keymap::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 12%;
+  left: 12%;
+  z-index: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(var(--accent) / 0.75), transparent);
+  pointer-events: none;
+}
+
+/* ──────────────────────────────── Sheet ─────────────────────────────── */
+
+/* What the panel holds on a desktop, so it is the panel's surface. */
+.sheet {
+  position: fixed;
+  inset: auto 0 0;
+  width: 100%;
+  max-width: 34rem;
+  max-height: min(88dvh, 46rem);
+  margin: 0 auto;
+  border: 0;
+  border-top: 1px solid var(--hairline-strong);
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: var(--surface-1);
+  box-shadow: 0 -1.5rem 4rem rgb(0 0 0 / 0.6);
+  transform-origin: 50% 100%;
+}
+
+.sheet__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.sheet__head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.625rem 0.375rem 1.25rem;
+}
+
+.sheet__title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-3);
+  font: 500 0.6875rem/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sheet__read {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-2);
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.sheet__read .ring {
+  width: 1rem;
+  height: 1rem;
+}
+
+.sheet__tools {
+  display: grid;
+  flex: none;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 0.5rem;
+  padding: 0.25rem 1rem 1rem;
+}
+
+/* The icons stand in one row, at the top: a name that takes two lines
+   ("lights out" in a narrow sheet) grows downward. */
+.sheet__tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  min-height: 4.25rem;
+  padding: 0.8125rem 0.25rem 0.5rem;
+  text-align: center;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: 500 0.6875rem/1.2 var(--mono);
+  letter-spacing: 0.04em;
+  transition: transform 320ms var(--spring-snappy);
+}
+
+.sheet__tool:hover {
+  border-color: var(--hairline-strong);
+  color: var(--text);
+}
+
+.sheet__tool:active {
+  transform: scale(0.96);
+}
+
+.sheet__tool[aria-pressed="true"] {
+  border-color: rgb(var(--accent) / 0.5);
+  background: rgb(var(--accent) / 0.1);
+  color: var(--accent-ink);
+}
+
+/* The icon row of a tool is 1.25rem high: the keycap sits in the same row. */
+.sheet__tool .keycaps {
+  align-items: center;
+  height: 1.25rem;
+}
+
+/* No keyboard: no key map. */
+@media (hover: none) {
+  .sheet__tool--keys {
+    display: none;
+  }
+}
+
+/* The list takes the room that is left, and it is the part that scrolls. */
+.sheet .section-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.75rem 0.75rem 1rem;
+  overflow: hidden auto;
+  border-top: 1px solid var(--hairline);
+  overscroll-behavior: contain;
+}
+
+.sheet__comfort {
+  flex: none;
+  border-top: 1px solid var(--hairline);
+}
+
+.sheet__comfort summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+  padding: 0 1rem 0 1.25rem;
+  color: var(--text-2);
+  font: 500 0.6875rem/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  list-style: none;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sheet__comfort summary::-webkit-details-marker {
+  display: none;
+}
+
+.sheet__comfort summary:focus-visible {
+  outline-offset: -2px;
+}
+
+.sheet__comfort summary:hover {
+  color: var(--text);
+}
+
+.sheet__comfort-name {
+  flex: 1;
+}
+
+.sheet__comfort[open] summary .icon {
+  transform: rotate(180deg);
+}
+
+/* The light that is on now. */
+.sheet__lamp,
+.resume__lamp {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: rgb(var(--accent));
+  box-shadow:
+    0 0 0 0.25rem rgb(var(--accent) / 0.14),
+    0 0 0.875rem rgb(var(--accent) / 0.9);
+}
+
+.sheet__comfort-body {
+  max-height: 52dvh;
+  padding: 0.25rem 1.25rem 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* A phone on its side: too low for a stack. The tools and the comfort
+   settings on the left, the sections over the full height on the right. */
+@media (max-height: 34rem) and (min-width: 40rem) {
+  .sheet {
+    max-width: 50rem;
+    max-height: 94dvh;
+  }
+
+  .sheet__body {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-columns: 19rem minmax(0, 1fr);
+  }
+
+  .sheet__head,
+  .sheet__tools,
+  .sheet__comfort {
+    grid-column: 1;
+  }
+
+  .sheet__comfort {
+    align-self: end;
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .sheet__comfort-body {
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* The bar under the sheet shows the share already. */
+  .sheet__read {
+    display: none;
+  }
+
+  .sheet .section-nav {
+    grid-row: 1 / -1;
+    grid-column: 2;
+    border-top: 0;
+    border-left: 1px solid var(--hairline);
+  }
+}
+
+/* ─────────────────────────────── Key map ────────────────────────────── */
+
+.keymap {
+  width: min(42rem, calc(100vw - 2rem));
+  max-height: min(84dvh, 44rem);
+  margin: auto;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-l);
+  background: var(--surface-2);
+  box-shadow: 0 2rem 6rem rgb(0 0 0 / 0.65);
+}
+
+.keymap__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.keymap__head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.75rem 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.keymap__title {
+  margin: 0;
+  font: 800 1.375rem/1 var(--display);
+  font-stretch: 85%;
+}
+
+/* The part that scrolls. It holds the focus while the map is open. */
+.keymap__list {
+  min-height: 0;
+  padding: 1.25rem 1.5rem 0.25rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Balanced columns: the groups differ in length. */
+.keymap__groups {
+  columns: 2 15rem;
+  column-gap: 2.5rem;
+}
+
+.keymap__group {
+  margin-bottom: 1.5rem;
+  break-inside: avoid;
+}
+
+.keymap__group-name {
+  margin: 0 0 0.375rem;
+  color: var(--text-3);
+  font: 500 0.6875rem/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.keymap__rows {
+  margin: 0;
+}
+
+.keymap__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.25rem;
+  margin: 0 -0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-s);
+}
+
+/* A key pressed while the map is open lights its row. */
+.keymap__row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(var(--accent) / 0.1);
+  opacity: 0;
+  transition: opacity var(--lit) ease-out;
+}
+
+.keymap__row[data-lit]::before {
+  opacity: 1;
+  transition-duration: var(--lit-fast);
+}
+
+.keymap__row[data-lit] .keycap {
+  border-color: rgb(var(--accent));
+  color: var(--accent-ink);
+  box-shadow: 0 0 0.75rem rgb(var(--accent) / 0.45);
+}
+
+.keymap__row dt {
+  position: relative;
+  color: var(--text);
+  font: 450 0.875rem/1.3 var(--body);
+}
+
+.keymap__row dd {
+  position: relative;
+  display: flex;
+  flex: none;
+  gap: 0.625rem;
+  margin: 0;
+}
+
+.keymap__keys {
+  display: inline-flex;
+}
+
+.keymap .keycap {
+  min-width: 1.5rem;
+  height: 1.5rem;
+  color: var(--text);
+}
+
+/* ──────────────────────────────── Resume ────────────────────────────── */
+
+/* Over the dock, in the document column. */
+.resume-slot {
+  position: fixed;
+  right: calc(19rem + 28px);
+  bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  z-index: var(--z-dock);
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
+  pointer-events: none;
+}
+
+.resume {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  max-width: 44rem;
+  padding: 0.5rem 0.5rem 0.5rem 1.125rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.5),
+    0 0.75rem 2.5rem rgb(0 0 0 / 0.6);
+  pointer-events: auto;
+  animation: resume-lit 420ms ease-out both;
+}
+
+.resume[data-leaving] {
+  opacity: 0;
+  transition: opacity var(--lit) ease-out;
+  animation: none;
+}
+
+@keyframes resume-lit {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.resume__text {
+  display: -webkit-box;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-2);
+  font: 450 0.875rem/1.35 var(--body);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.resume__place {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.resume__code {
+  margin-right: 0.4em;
+  color: var(--accent-ink);
+  font: 500 0.8125rem/1 var(--mono);
+}
+
+.resume__actions {
+  display: flex;
+  flex: none;
+  gap: 0.25rem;
+}
+
+.resume__go,
+.resume__reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.25rem;
+  border-radius: var(--radius-pill);
+  font: 600 0.8125rem/1 var(--body);
+  white-space: nowrap;
+  transition: transform 320ms var(--spring-snappy);
+}
+
+.resume__go:active,
+.resume__reset:active {
+  transform: scale(0.96);
+}
+
+.resume__go {
+  padding: 0 0.4375rem 0 0.875rem;
+  background: rgb(var(--accent));
+  color: var(--on-accent);
+}
+
+.resume__go .keycap {
+  border-color: rgb(0 0 0 / 0.28);
+  background: rgb(0 0 0 / 0.1);
+  color: var(--on-accent);
+}
+
+.resume__reset {
+  padding: 0 0.875rem;
+  color: var(--text-2);
+}
+
+.resume__reset:hover {
+  background: rgb(255 255 255 / 0.07);
+  color: var(--text);
+}
+
+@media (max-width: 60rem) {
+  /* Over the bottom bar. */
+  .resume-slot {
+    right: 0;
+    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    padding: 0 0.75rem;
+  }
+
+  .resume {
+    flex-wrap: wrap;
+    gap: 0.875rem 0.75rem;
+    width: 100%;
+    max-width: 34rem;
+    padding: 1rem;
+    border-radius: var(--radius-l);
+  }
+
+  .resume__lamp {
+    align-self: flex-start;
+    margin: 0.4rem 0.125rem 0 0.25rem;
+  }
+
+  .resume__text {
+    flex: 1;
+    font-size: 0.9375rem;
+  }
+
+  .resume__actions {
+    flex: 1 1 100%;
+    gap: 0.5rem;
+  }
+
+  .resume__go,
+  .resume__reset {
+    flex: 1;
+    height: 2.75rem;
+    font-size: 0.875rem;
+  }
+
+  .resume__go {
+    padding: 0 0.875rem;
+  }
+
+  .resume__reset {
+    border: 1px solid var(--hairline-strong);
+  }
+}
+
+/* No keyboard: no key hint. */
+@media (hover: none) {
+  .resume__go .keycaps {
+    display: none;
+  }
+
+  .resume__go {
+    padding: 0 0.875rem;
+  }
+}
+
+/* ──────────────────────────────── Print ─────────────────────────────── */
+
+@media print {
+  .progress-line,
+  .dock-slot,
+  .resume-slot {
+    display: none;
+  }
+}
+
+/* ───────────────────────────── Less motion ──────────────────────────── */
+
+/* The system setting and the "calm" preference get the same treatment:
+   nothing leaves, nothing scales, things only fade. */
+html[data-calm] .dock,
+html[data-calm] .dock[data-away]:not(:has(:focus-visible)) {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  transition: none;
+}
+
+html[data-calm] .dock__tool,
+html[data-calm] .sheet__tool,
+html[data-calm] .resume__go,
+html[data-calm] .resume__reset {
+  transition: none;
+}
+
+html[data-calm] .dock__tool:active,
+html[data-calm] .sheet__tool:active,
+html[data-calm] .resume__go:active,
+html[data-calm] .resume__reset:active {
+  transform: none;
+}
+
+html[data-calm] .ring__flash,
+html[data-calm] .dock__title {
+  animation: none;
+}
+
+html[data-calm] .sheet,
+html[data-calm] .keymap {
+  transform: none;
+}
+
+html[data-calm] .resume {
+  animation-name: fade-in;
+  animation-duration: var(--lit);
+}
+
+@starting-style {
+  html[data-calm] .sheet[open],
+  html[data-calm] .keymap[open] {
+    transform: none;
+  }
+}
