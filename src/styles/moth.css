@@ -1,0 +1,76 @@
+/* Owner: enter features (the moth that follows the light).
+
+   `Moth.tsx` writes `transform` and `opacity` on `.moth` every frame, in
+   viewport pixels: the element sits at the top left and is moved from there.
+   It never takes a click. In the layer it lives in, it comes after the rain
+   and before the controls, so it flies over the letters and behind the plates. */
+
+.moth {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--accent-ink);
+  opacity: 0;
+  pointer-events: none;
+  contain: layout style;
+  will-change: transform, opacity;
+}
+
+.moth[data-dark] {
+  visibility: hidden;
+}
+
+.moth svg {
+  display: block;
+  overflow: visible;
+  /* The ink fluoresces: a faint halo of its own light. On a moving layer the
+     filter is drawn with the moth, not with the page. */
+  filter: drop-shadow(0 0 2.5px rgb(var(--accent) / 0.55));
+}
+
+/* Opaque wings: the moth is a thing in front of the light, not more rain. */
+.moth__wing path {
+  fill: color-mix(in srgb, rgb(var(--accent)) 16%, var(--void));
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+
+.moth__body {
+  fill: currentColor;
+}
+
+.moth__feelers {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.1;
+  stroke-linecap: round;
+}
+
+/* Seen from above, a wingbeat folds the wings in toward the body. */
+.moth__wing {
+  transform-box: fill-box;
+  transform-origin: right center;
+  animation: moth-flap 110ms ease-in-out infinite alternate;
+}
+
+.moth__wing[data-side="right"] {
+  transform-origin: left center;
+}
+
+.moth[data-dark] .moth__wing {
+  animation-play-state: paused;
+}
+
+@keyframes moth-flap {
+  to {
+    transform: scaleX(0.4);
+  }
+}
+
+/* Less motion: it sits still, wings open. */
+html[data-calm] .moth__wing {
+  animation: none;
+}
