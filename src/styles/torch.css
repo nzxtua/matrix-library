@@ -1,0 +1,126 @@
+/* Owner: content features (torch reading mode). `components/Torch.tsx`.
+
+   Reading by torchlight: the page goes dark and a soft round beam follows the
+   pointer. Two plates, moved with `transform` only, from `--torch-x` and
+   `--torch-y` (written on `.torch`, once per frame at most):
+   - the dark, with a hole cut by a radial mask;
+   - the haze, the colour of the light, blended as light.
+   Over the document, the map and the panel; under the dock (`dock.css` lifts
+   it while the torch is on), the popovers, the toast and every dialog. */
+
+/* The radius of the hole. Registered, so the iris can be a transition. */
+@property --torch-r {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+/* The wrapper has no box and no stacking context of its own: the haze must
+   blend with the page itself. */
+.torch {
+  --torch-r: 0px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  /* Off: the hole stays open while the dark fades, then closes unseen. */
+  transition: --torch-r 0s linear var(--lit);
+}
+
+/* On: the beam opens like an iris. `--torch-size` is written by the component. */
+.torch[data-on] {
+  --torch-r: var(--torch-size, 280px);
+  transition: --torch-r var(--lit) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.torch__dark,
+.torch__haze {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: calc(var(--z-dock) + 2);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--lit) ease-out,
+    visibility 0s linear var(--lit);
+}
+
+/* Near-black, twice the viewport each way: it covers the viewport from any
+   place of the beam inside it. The hole: a fully lit core (30 % of the
+   radius), then the falloff of the Enter page beam (a smoothstep), sampled
+   every tenth. */
+.torch__dark {
+  width: 200vw;
+  height: 200vh;
+  background: rgb(3 3 5 / 0.94);
+  transform: translate3d(calc(var(--torch-x, 50vw) - 100vw), calc(var(--torch-y, 35vh) - 100vh), 0);
+  mask-image: radial-gradient(
+    circle var(--torch-r) at 50% 50%,
+    transparent 30%,
+    rgb(0 0 0 / 0.055) 40%,
+    rgb(0 0 0 / 0.198) 50%,
+    rgb(0 0 0 / 0.394) 60%,
+    rgb(0 0 0 / 0.606) 70%,
+    rgb(0 0 0 / 0.802) 80%,
+    rgb(0 0 0 / 0.945) 90%,
+    #000 100%
+  );
+}
+
+/* The light on the surface. `screen` lifts the dark ground and leaves the ink
+   of the text as it is. A trace of the second ink at the rim, like the
+   fringe of the Enter page beam. */
+.torch__haze {
+  width: calc(var(--torch-r) * 2);
+  height: calc(var(--torch-r) * 2);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgb(var(--haze) / 0.1),
+    rgb(var(--haze) / 0.045) 45%,
+    rgb(var(--accent-2) / 0.04) 80%,
+    transparent
+  );
+  mix-blend-mode: screen;
+  transform: translate3d(
+    calc(var(--torch-x, 50vw) - var(--torch-r)),
+    calc(var(--torch-y, 35vh) - var(--torch-r)),
+    0
+  );
+}
+
+/* The dark comes at once; the iris is what the eye follows. */
+.torch:where([data-on]:not([data-paused])) > * {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity var(--lit-fast) ease-out;
+  will-change: transform;
+}
+
+/* Sent somewhere (a jump, the focus, back to the reading line): the beam
+   travels there. Under the pointer it never lags. */
+.torch:where([data-on][data-glide]:not([data-paused])) > * {
+  transition:
+    opacity var(--lit-fast) ease-out,
+    transform 280ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* ───────────────────────────── Less motion ──────────────────────────── */
+
+/* No iris, no glide, no fade: the torch is on or off. */
+html[data-calm] .torch,
+html[data-calm] .torch > * {
+  transition: none;
+}
+
+/* ──────────────────────────────── Print ─────────────────────────────── */
+
+@media print {
+  .torch {
+    display: none;
+  }
+}

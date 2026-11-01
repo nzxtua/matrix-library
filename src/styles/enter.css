@@ -1,0 +1,782 @@
+/* Owner: enter. The Enter page: a black stage, a beam, and what the beam finds.
+
+   Naming trap: on this page `--lit` is a number, 0..1: how much of the beam
+   reaches an element. `MatrixFlashlight.tsx` writes it every frame on each
+   `[data-lit]` element, and only there. The token `--lit` of `tokens.css` is
+   a duration: do not use it for a transition inside `.stage`; take
+   `--lit-fast` or a literal.
+
+   Nothing here is visible without light. `--on` is what an element shows:
+   the beam, or 1 while the element has the keyboard focus (the beam is sent
+   there too). The one exception is the hint line, 3 s after the page opens,
+   and what the flashlight says in its place (the battery) at once.
+   The letters of a reader who read it all keep a floor of light. */
+
+/* How visible the hint is with no light on it. Registered, so it can fade. */
+@property --hint-base {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  /* Layers inside the stage only: the deep and the wordmark 0 (in that order),
+     rain 1, everything else 2. */
+  isolation: isolate;
+  overflow: hidden;
+  /* The beam is the cursor. */
+  cursor: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--void);
+
+  /* The wordmark: two words, both set to one block width. Each letter has a
+     slot as wide as itself at full light plus a gap (`fitSlots` in
+     MatrixFlashlight.tsx). The wider word at full light, with its gaps, is
+     about 3.4em, so a block of 3.66em holds it. */
+  /* Wide, but never taller than the stage less the gap and room for the foot
+     above and below: two rows are 2 × 0.675 / 3.66 of the block. */
+  --wm-block: min(86vw, (100vh - 10rem - var(--wm-gap)) * 2.71);
+  --wm-size: calc(var(--wm-block) / 3.66);
+  /* The pill and what hangs under it live in the gap between the words. The
+     pill is centred, so half the gap holds half the pill, the continue chip
+     and their spacing: 11rem at least. */
+  --wm-gap: clamp(11rem, 21vh, 12rem);
+  --wm-stroke: 4px;
+  /* From the centre of the stage to the top or the bottom of the wordmark.
+     0.675em is the cap height of the face. */
+  --wm-half: calc(var(--wm-size) * 0.675 + var(--wm-gap) / 2);
+}
+
+/* Upright: the letters are narrow and tall instead. */
+@media (max-aspect-ratio: 1/1) {
+  .stage {
+    --wm-block: min(100vw - 2rem, 62vh);
+    --wm-size: calc(var(--wm-block) / 2.85);
+    --wm-stroke: 3px;
+  }
+}
+
+/* With the lights on there is no beam to show where the pointer is. */
+.stage[data-entered="true"] {
+  cursor: default;
+}
+
+.stage [data-lit] {
+  --on: max(var(--lit, 0), var(--hold, 0));
+}
+
+.stage [data-lit]:focus-visible {
+  --hold: 1;
+}
+
+/* For a reader who cannot see the light. */
+.stage__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The deep (`lib/deep-rain.ts`): under the wordmark, in the same light. It
+   comes up softly once its first frame is drawn. */
+.stage__deep {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.9s ease-out;
+}
+
+.stage__deep[data-ready] {
+  opacity: 1;
+}
+
+.stage__rain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ─────────────────────────────── Wordmark ───────────────────────────── */
+
+/* Six narrow slots over three wide ones, each as wide as its letter at full
+   light. A letter never leaves its slot, whatever the light does to it. The
+   sizes are on `.stage`. */
+.wordmark {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  align-content: center;
+  justify-content: center;
+  row-gap: var(--wm-gap);
+  font-family: var(--display);
+  font-size: var(--wm-size);
+  /* The cap height of the face: a row is exactly as tall as its letters. */
+  line-height: 0.675;
+  pointer-events: none;
+}
+
+.wordmark__row {
+  --ink: var(--accent);
+  /* The width axis at no light and at full light. */
+  --w0: 50;
+  --w1: 75;
+
+  display: flex;
+  width: var(--wm-block);
+  height: 0.675em;
+  /* A row wider than the block at full light (`--row-ems`, set by `fitSlots`)
+     gets smaller letters. A shorter one keeps the full size. */
+  font-size: min(1em, var(--wm-block) / var(--row-ems, 1));
+}
+
+.wordmark__row[data-row="1"] {
+  --ink: var(--accent-2);
+}
+
+/* A short word is set wide. */
+.wordmark__row[data-wide] {
+  --w0: 100;
+  --w1: 150;
+}
+
+/* Between two words of one row. Its width is SPACE_EMS in MatrixFlashlight.tsx. */
+.wordmark__space {
+  flex: 0.3 0 0;
+}
+
+.wordmark__letter {
+  --on: var(--lit, 0);
+
+  position: relative;
+  /* The line box sits 1/16 em above the capitals: move them into it. */
+  top: 0.0625em;
+  display: grid;
+  flex: 1 1 0;
+  place-items: center;
+  min-width: 0;
+  contain: layout;
+  /* Outlined: the fill is the dark itself. It is painted over the inner half
+     of the stroke, which also hides where the contours of the face overlap. */
+  color: color-mix(in srgb, rgb(var(--ink)) calc(var(--on) * 9%), var(--void));
+  -webkit-text-stroke: var(--wm-stroke) rgb(var(--ink));
+  paint-order: stroke fill;
+  /* Weight and width swell with the light. */
+  font-weight: calc(100 + 800 * var(--on));
+  font-stretch: calc((var(--w0) + (var(--w1) - var(--w0)) * var(--on)) * 1%);
+  /* The outline shows early, in the soft edge of the beam; the swell is what
+     tells where the light is. */
+  opacity: min(1, var(--on) * 2.2);
+}
+
+/* ─────────── A letter in 3D: it turns to the light and has depth ─────────── */
+
+.wordmark__letter {
+  /* The letter is a little stage of its own: close enough for its turn to read. */
+  perspective: 2.6em;
+}
+
+/* All faces in one cell, turned together. `--rx` / `--ry` (degrees) are
+   written by the page: toward the beam, as far as the letter is lit. A lit
+   letter also comes forward. */
+.wordmark__body {
+  display: grid;
+  place-items: center;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateZ(calc(var(--on) * 0.1em));
+  transform-style: preserve-3d;
+}
+
+.wordmark__body > * {
+  grid-area: 1 / 1;
+}
+
+/* The depth: the outline again, each copy a step further back and dimmer.
+   Flat, they hide behind the face; turned, they show the letter's thickness. */
+.wordmark__depth {
+  color: transparent;
+  -webkit-text-stroke: calc(var(--wm-stroke) * 0.55) rgb(var(--ink) / calc(0.55 - var(--d) * 0.13));
+  transform: translateZ(calc(var(--d) * -0.045em));
+}
+
+/* The code inside: falling glyphs in the ink, clipped to the letter, in two
+   layers that fall at different speeds. Only in the core of the light (and
+   in the afterglow it leaves). `--code-*` are tiles from lib/code-tiles.ts,
+   `--fall-*` are written by the page at the pace of the rain. */
+.wordmark__code {
+  background-image: var(--code-near, none), var(--code-far, none);
+  background-position:
+    calc(var(--i, 0) * -0.37em) var(--fall-near, 0),
+    calc(var(--i, 0) * -0.53em) var(--fall-far, 0);
+  background-size:
+    1.36em 4em,
+    0.82em 2.4em;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 0 transparent;
+  opacity: calc(var(--on) * var(--on));
+  transform: translateZ(0.002em);
+}
+
+@media (max-aspect-ratio: 1/1) {
+  .wordmark__row {
+    --w0: 50;
+    --w1: 54;
+  }
+
+  .wordmark__row[data-wide] {
+    --w0: 50;
+    --w1: 100;
+  }
+}
+
+/* ───────────────────────────────── Pill ─────────────────────────────── */
+
+.gate {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  translate: -50% -50%;
+}
+
+.enter {
+  position: relative;
+  display: block;
+  /* Five slots of 1.5em: the label can change, the pill cannot. */
+  width: calc(7.5em + 3.75rem);
+  height: 3.75rem;
+  border: 1.5px solid rgb(var(--accent));
+  border-radius: var(--radius-pill);
+  /* Opaque base: the rain must not run through the label. */
+  background: var(--void);
+  color: var(--accent-ink);
+  font: 400 1.1875rem/1 var(--display);
+  opacity: var(--on);
+  cursor: pointer;
+  transition: scale 420ms var(--spring-snappy);
+}
+
+/* The glow is one fixed shadow; only its opacity follows the light. */
+.enter::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  box-shadow:
+    0 0 0.5rem rgb(var(--accent) / 0.28),
+    0 0 2.5rem rgb(var(--accent) / 0.34);
+  opacity: var(--on);
+  pointer-events: none;
+}
+
+.enter:hover,
+.enter:not([data-phase="idle"]) {
+  --hold: 1;
+}
+
+.enter:focus-visible {
+  outline-offset: 6px;
+}
+
+.enter[data-phase="idle"]:active {
+  scale: 0.96;
+  transition-duration: 90ms;
+}
+
+.enter__body {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.enter__label {
+  display: flex;
+  white-space: nowrap;
+}
+
+/* Fixed-width slots keep the pill still while the label swells or scrambles. */
+.enter__char {
+  width: 1.5em;
+  font-weight: calc(300 + 500 * var(--on));
+  font-stretch: calc((60 + 65 * var(--on)) * 1%);
+  text-align: center;
+}
+
+/* The progress: a lit surface that moves in from the left, with the label in
+   the ink for a lit surface. `--p` (0..1) is written on this element by the
+   loader. The label inside moves the other way, so it stays where it is. */
+.enter__fill {
+  --p: 0;
+
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  visibility: hidden;
+  background: rgb(var(--accent));
+  color: var(--on-accent);
+  transform: translateX(calc((var(--p) - 1) * 100%));
+}
+
+.enter__fill > .enter__label {
+  transform: translateX(calc((1 - var(--p)) * 100%));
+}
+
+.enter:not([data-phase="idle"]) .enter__fill {
+  visibility: visible;
+}
+
+/* Under the pill, out of the flow: the pill stays in the centre. */
+.gate__below {
+  position: absolute;
+  top: calc(100% + 0.875rem);
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  width: max-content;
+  translate: -50% 0;
+}
+
+.continue {
+  position: relative;
+  min-height: 2.25rem;
+  padding: 0 1rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background: var(--void);
+  color: var(--text-2);
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: var(--on);
+  cursor: pointer;
+  transition:
+    scale 420ms var(--spring-snappy),
+    color var(--lit-fast),
+    border-color var(--lit-fast);
+}
+
+/* A 44 px target around the 36 px chip. */
+.continue::before {
+  content: "";
+  position: absolute;
+  inset: -0.375rem 0;
+}
+
+.continue:hover,
+.continue:focus-visible {
+  border-color: rgb(var(--accent) / 0.7);
+  color: var(--accent-ink);
+}
+
+.continue:active {
+  scale: 0.96;
+  transition-duration: 90ms;
+}
+
+.gate__caption {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: center;
+  margin: 0;
+  color: var(--text-2);
+  font: 500 0.6875rem/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.gate__status,
+.gate__skip {
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-s);
+  background: var(--void);
+  animation: fade-in 240ms ease-out both;
+}
+
+.gate__skip {
+  color: var(--text-3);
+  animation-delay: 900ms;
+}
+
+/* ──────────────────────────── Found objects ─────────────────────────── */
+
+/* Three drawings pinned in the dark. A black plate behind each, so the rain
+   does not run through the drawing. */
+.found {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-m);
+  background: var(--void);
+  color: var(--text-2);
+  font: 500 0.75rem/1.25 var(--mono);
+  opacity: var(--on);
+  cursor: pointer;
+  transition:
+    scale 420ms var(--spring-snappy),
+    color 240ms;
+}
+
+.found:active {
+  scale: 0.95;
+  transition-duration: 90ms;
+}
+
+/* Found: it takes the fluorescent ink. */
+.found[aria-pressed="true"] {
+  color: var(--accent-ink);
+  cursor: default;
+}
+
+.found[aria-pressed="true"]:active {
+  scale: 1;
+}
+
+/* Wide: two hang in the band between the words, on either side of the pill
+   and out of the reach of a beam that rests on it. The third is under the
+   second word. */
+.found[data-object="moth"] {
+  top: 50%;
+  left: 81%;
+  translate: -50% -62%;
+}
+
+.found[data-object="switch"] {
+  top: 50%;
+  left: 17%;
+  translate: -50% -50%;
+}
+
+.found[data-object="battery"] {
+  top: min(50% + var(--wm-half) + 1rem, 100% - 6.5rem);
+  left: 37%;
+}
+
+.found__art {
+  display: block;
+  text-align: left;
+  white-space: pre;
+}
+
+.found__tag {
+  color: var(--text-3);
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The count, for a moment after the find. */
+.found__tag[data-says] {
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-aspect-ratio: 1/1) {
+  /* Upright: the band is as wide as the pill, and the foot takes the room
+     under the words. All three hang over the words, staggered: the battery
+     low on the left, the switch in the middle, the moth high on the right.
+     The moth never leaves the top edge of a short screen. */
+  .found[data-object="moth"] {
+    top: auto;
+    right: 1rem;
+    /* 7.5rem: the plate with its name under it, and a margin. */
+    bottom: min(50% + var(--wm-half) + 5.5rem, 100% - 7.5rem);
+    left: auto;
+    translate: none;
+  }
+
+  .found[data-object="switch"] {
+    top: auto;
+    bottom: calc(50% + var(--wm-half) + 1.25rem);
+    /* A little right of the middle: the found battery has a wide name. */
+    left: calc(50% + 0.75rem);
+    translate: -50% 0;
+  }
+
+  .found[data-object="battery"] {
+    top: auto;
+    bottom: calc(50% + var(--wm-half) + 1.25rem);
+    left: 1rem;
+  }
+}
+
+/* ───────────────────────────────── Foot ─────────────────────────────── */
+
+.stage__foot {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+  justify-content: space-between;
+  padding: 1.25rem max(1.5rem, env(safe-area-inset-right)) max(1.25rem, env(safe-area-inset-bottom))
+    max(1.5rem, env(safe-area-inset-left));
+  pointer-events: none;
+}
+
+.stage__foot > * {
+  pointer-events: auto;
+}
+
+/* Small mono plates: text on black, never on the rain. */
+.hint,
+.vibes__label,
+.vibes__count {
+  margin: 0;
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--radius-s);
+  background: var(--void);
+  color: var(--text-2);
+  font: 500 0.6875rem/1.5 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hint {
+  max-width: 28rem;
+  text-wrap: balance;
+  /* The text, not the plate, sits on the gutter. */
+  margin: 0 0 0.5625rem -0.625rem;
+  opacity: max(var(--on), var(--hint-base));
+  animation: hint-in 600ms ease-out 3s both;
+}
+
+.hint__part {
+  white-space: nowrap;
+}
+
+/* A new hint, or what the flashlight says in its place, gets lit. */
+.hint__text {
+  animation: fade-in 240ms ease-out both;
+}
+
+@keyframes hint-in {
+  to {
+    --hint-base: 0.78;
+  }
+}
+
+/* The battery: the reader reads this with the light out, so it does not wait
+   for the hint's 3 s and needs no beam. */
+.hint[data-status] {
+  color: var(--text);
+  opacity: max(var(--on), 0.78);
+}
+
+.stage[data-entered="true"] .hint {
+  opacity: 0;
+  transition: opacity 240ms;
+}
+
+/* The moth (moth.css) flies in the top layer of the stage: over the rain and
+   the letters, and behind the pill and the plates, which come after it. */
+.stage .moth {
+  z-index: 2;
+}
+
+/* The flood is all light: no moth to see in it. */
+.stage[data-entered="true"] .moth {
+  visibility: hidden;
+}
+
+.vibes {
+  display: grid;
+  justify-items: end;
+}
+
+.vibes__count {
+  margin-right: 0.375rem;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+  opacity: var(--on);
+}
+
+.vibes__row {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.vibes__label {
+  display: flex;
+  gap: 0.75rem;
+  white-space: nowrap;
+  opacity: var(--on);
+}
+
+.vibes__name {
+  color: var(--text);
+}
+
+.vibes__note {
+  color: var(--text-3);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.vibes__dots {
+  display: flex;
+  /* The last dot, not its 44 px target, sits on the gutter. */
+  margin-right: -1rem;
+}
+
+.vibe-dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--void);
+  opacity: var(--on);
+  cursor: pointer;
+}
+
+/* The light itself. */
+.vibe-dot::before {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--swatch);
+  transition: scale 420ms var(--spring-bouncy);
+}
+
+.vibe-dot:hover::before {
+  scale: 1.3;
+}
+
+/* The ring of the one that is on. */
+.vibe-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0.5625rem;
+  border: 1.5px solid var(--swatch);
+  border-radius: 50%;
+  opacity: 0;
+  scale: 0.6;
+  transition:
+    opacity var(--lit-fast),
+    scale 420ms var(--spring-snappy);
+}
+
+.vibe-dot[aria-checked="true"]::after {
+  opacity: 1;
+  scale: 1;
+}
+
+/* Locked: an empty socket. */
+.vibe-dot[aria-disabled="true"] {
+  cursor: default;
+}
+
+.vibe-dot[aria-disabled="true"]::before {
+  border: 1.5px dashed var(--text-3);
+  background: none;
+}
+
+.vibe-dot[aria-disabled="true"]:hover::before {
+  scale: 1;
+}
+
+@media (max-width: 40rem) {
+  .stage__foot {
+    padding: 1rem max(1rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom))
+      max(1rem, env(safe-area-inset-left));
+  }
+
+  /* Narrow: the count and the name of the light get rows of their own over
+     the dots, so a hint of two or three lines never runs under them. */
+  .stage__foot {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "count count"
+      "label label"
+      "hint dots";
+    row-gap: 0.25rem;
+    column-gap: 0.5rem;
+    align-items: center;
+  }
+
+  .vibes,
+  .vibes__row {
+    display: contents;
+  }
+
+  /* The text, not the plate, sits on the gutter. */
+  .vibes__count {
+    grid-area: count;
+    justify-self: end;
+    margin: 0 -0.625rem 0 0;
+    pointer-events: auto;
+  }
+
+  .vibes__label {
+    grid-area: label;
+    justify-self: end;
+    margin-right: -0.625rem;
+    pointer-events: auto;
+  }
+
+  .vibes__dots {
+    grid-area: dots;
+    margin-right: -0.875rem;
+    pointer-events: auto;
+  }
+
+  .hint {
+    grid-area: hint;
+    margin: 0 0 0 -0.625rem;
+  }
+}
+
+/* ──────────────────────────── Reduced motion ────────────────────────── */
+
+/* No springs and no fades: things are lit or they are not. The hint still
+   arrives after its 3 s, at once. */
+html[data-calm] .enter,
+html[data-calm] .continue,
+html[data-calm] .found,
+html[data-calm] .vibe-dot::before,
+html[data-calm] .vibe-dot::after,
+html[data-calm] .stage[data-entered="true"] .hint {
+  transition: none;
+}
+
+html[data-calm] .gate__status,
+html[data-calm] .gate__skip,
+html[data-calm] .hint,
+html[data-calm] .hint__text {
+  animation-duration: 1ms;
+}
