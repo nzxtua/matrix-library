@@ -1,0 +1,16 @@
+/* The parts, in cascade order. Each file names its owner in its first line. */
+@import "./styles/tokens.css";
+@import "./styles/enter.css";
+@import "./styles/doc.css";
+@import "./styles/table.css";
+@import "./styles/panel.css";
+@import "./styles/dock.css";
+@import "./styles/spotlight.css";
+@import "./styles/tools.css";
+@import "./styles/minimap.css";
+@import "./styles/torch.css";
+@import "./styles/moth.css";
+@import "./styles/library.css";
+@import "./styles/bullet-time.css";
+@import "./styles/water.css";
+@import "./styles/print.css";
