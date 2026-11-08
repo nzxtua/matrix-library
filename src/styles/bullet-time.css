@@ -1,0 +1,34 @@
+/* Owner: bullet time. The frozen moment round the poster title of a content
+   page (`BulletTime`).
+
+   One canvas, fixed to the viewport behind the document: `.doc-page`
+   isolates, so `z-index: -1` puts it over the page colour and under every
+   block. The scene fades out just under the title block. It never takes a
+   click: the stage listens on the title block itself. It comes up once its
+   first frame is drawn. */
+
+.bullet-time {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms ease-out;
+}
+
+.bullet-time[data-ready] {
+  opacity: 1;
+}
+
+html[data-calm] .bullet-time {
+  transition-duration: 240ms;
+}
+
+@media print {
+  .bullet-time {
+    display: none;
+  }
+}
