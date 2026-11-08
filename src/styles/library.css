@@ -1,0 +1,569 @@
+/* Owner: library. The library page (`/content` when there are several
+   documents) and the way between documents on a content page: the shelf row
+   above the title and the next card under the last block. */
+
+/* ────────────────────────────── The library ───────────────────────────── */
+
+.library {
+  --gutter: clamp(1.25rem, 4vw, 3.5rem);
+  min-height: 100dvh;
+  padding: clamp(2.5rem, 7vh, 5rem) var(--gutter) 8rem;
+  background:
+    radial-gradient(70rem 36rem at 12% -12%, rgb(var(--haze) / 0.14), transparent 62%), var(--bg);
+  color: var(--text);
+}
+
+.library__head,
+.library__list,
+.library__empty {
+  position: relative;
+  z-index: 1;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+/* The 3D room (`TubeStage`): pods and rain behind everything, fixed to the
+   viewport. It comes up slowly once its first frame is drawn. */
+.library__stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.2s ease-out;
+}
+
+.library__stage[data-ready] {
+  opacity: 1;
+}
+
+@media print {
+  .library__stage {
+    display: none;
+  }
+}
+
+.library__home,
+.library__eyebrow {
+  font: 500 0.6875rem/1.5 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.library__home {
+  color: var(--text-3);
+  text-decoration: none;
+  transition: color var(--lit);
+}
+
+.library__home:hover {
+  color: var(--accent-ink);
+}
+
+.library__eyebrow {
+  margin: clamp(2.5rem, 8vh, 4.5rem) 0 0;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The wordmark of the Enter page, set as a poster. The second row is ink
+   that is not lit yet: an outline. */
+.library__title {
+  margin: 0.9rem 0 0;
+  font: 850 clamp(3rem, 10vw, 7.5rem) / 0.86 var(--display);
+  font-stretch: 70%;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+}
+
+.library__row {
+  display: block;
+}
+
+.library__row + .library__row {
+  color: transparent;
+  letter-spacing: 0.03em;
+  -webkit-text-stroke: max(0.022em, 2px) rgb(var(--accent));
+}
+
+.library__empty {
+  margin-top: 4rem;
+  color: var(--text-2);
+  font: 500 0.8125rem/1.6 var(--mono);
+}
+
+.library__list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: clamp(3rem, 8vh, 5rem);
+  margin-bottom: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The cards come on one after the other, like tubes warming up. */
+.library__list > li {
+  animation: shelf-in 720ms var(--spring-snappy) both;
+  animation-delay: calc(var(--i, 0) * 70ms + 120ms);
+}
+
+@keyframes shelf-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(0.9rem);
+  }
+}
+
+/* ─────────────────────────────── A card ─────────────────────────────── */
+
+.shelf-card {
+  --x: -100vmax;
+  --y: -100vmax;
+  --read: 0;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  padding: 1.6rem clamp(1.25rem, 3vw, 2.25rem);
+  overflow: hidden;
+  border-radius: var(--radius-l);
+  background: var(--surface-1);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    background var(--lit),
+    box-shadow var(--lit),
+    transform var(--lit) var(--spring-snappy);
+}
+
+/* The edge the beam finds: a ring of light, only where it falls. */
+.shelf-card::before {
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: radial-gradient(
+    18rem circle at var(--x) var(--y),
+    rgb(var(--accent) / 0.95),
+    rgb(var(--accent-2) / 0.4) 38%,
+    transparent 72%
+  );
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--lit);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+/* The haze of the same light on the card. */
+.shelf-card::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(
+    30rem circle at var(--x) var(--y),
+    rgb(var(--haze) / 0.18),
+    transparent 65%
+  );
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--lit);
+}
+
+.library__list[data-beam] .shelf-card::before,
+.library__list[data-beam] .shelf-card::after {
+  opacity: 1;
+}
+
+.shelf-card:hover {
+  background: color-mix(in oklab, var(--surface-1), #fff 2.5%);
+}
+
+.shelf-card:active {
+  transform: scale(0.994);
+}
+
+.shelf-card:focus-visible {
+  outline: var(--focus);
+  outline-offset: 3px;
+}
+
+/* ENTER opens this one. */
+.shelf-card[data-here] {
+  box-shadow: inset 0 0 0 1px rgb(var(--accent) / 0.32);
+}
+
+/* The number is a glass the reading fills with ink, from the bottom. */
+.shelf-card__no {
+  min-width: 2ch;
+  background: linear-gradient(
+      to top,
+      rgb(var(--accent)) calc(var(--read) * 100%),
+      transparent calc(var(--read) * 100%)
+    )
+    text;
+  color: transparent;
+  font: 850 clamp(2.75rem, 6vw, 4.75rem) / 0.8 var(--display);
+  font-stretch: 70%;
+  font-variant-numeric: tabular-nums;
+  -webkit-text-stroke: 1.5px rgb(var(--accent) / 0.55);
+  transition:
+    filter var(--lit),
+    -webkit-text-stroke-color var(--lit);
+}
+
+.shelf-card:hover .shelf-card__no,
+.shelf-card:focus-visible .shelf-card__no {
+  filter: drop-shadow(0 0 0.9rem rgb(var(--accent) / 0.55));
+  -webkit-text-stroke-color: rgb(var(--accent));
+}
+
+.shelf-card__body {
+  min-width: 0;
+}
+
+.shelf-card__file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  color: var(--text-3);
+  font: 500 0.6875rem/1.4 var(--mono);
+  letter-spacing: 0.04em;
+}
+
+.shelf-card__here {
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: rgb(var(--accent));
+  color: var(--on-accent);
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.shelf-card__title {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--text);
+  font: 750 clamp(1.3rem, 2.6vw, 1.9rem) / 1.1 var(--display);
+  font-stretch: 82%;
+  text-wrap: balance;
+}
+
+.shelf-card__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
+  margin-top: 0.8rem;
+  color: var(--text-3);
+  font: 500 0.6875rem/1.3 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.shelf-card__state {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-2);
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.shelf-card[data-done] .shelf-card__state {
+  color: var(--accent-ink);
+}
+
+/* How much is lit, as a line of light along the bottom edge. */
+.shelf-card__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--read) * 100%);
+  height: 2px;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(90deg, rgb(var(--accent) / 0.15), rgb(var(--accent)));
+  box-shadow: 0 0 0.75rem rgb(var(--accent) / 0.6);
+}
+
+@media (max-width: 40rem) {
+  .shelf-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .shelf-card__state {
+    grid-column: 2;
+  }
+}
+
+/* Less motion: no entrance, no beam; a card lights up whole on hover. */
+html[data-calm] .library__list > li {
+  animation: none;
+}
+
+html[data-calm] .shelf-card {
+  --x: 50%;
+  --y: 0%;
+}
+
+html[data-calm] .shelf-card:is(:hover, :focus-visible)::before,
+html[data-calm] .shelf-card:is(:hover, :focus-visible)::after {
+  opacity: 1;
+}
+
+/* ──────────────────── Between documents, on a content page ─────────────────── */
+
+.shelf-arrow {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+  transition: translate var(--lit) var(--spring-bouncy);
+}
+
+.shelf-arrow[data-back] {
+  scale: -1 1;
+}
+
+.doc-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: full;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 2.25rem;
+  color: var(--text-3);
+  font: 500 0.6875rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* The row stands in front of bullet time (`bullet-time.css`): every part of
+   it is solid, so the rain never runs through its words. */
+.doc-shelf__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.8rem 0.45rem 0.6rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    color var(--lit),
+    border-color var(--lit);
+}
+
+.doc-shelf__back:hover {
+  border-color: rgb(var(--accent) / 0.5);
+  color: var(--accent-ink);
+}
+
+.doc-shelf__back:hover .shelf-arrow {
+  translate: -2px 0;
+}
+
+.doc-shelf__position {
+  padding: 0.45rem 0.7rem;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--text-2);
+}
+
+.doc-shelf__steps {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.doc-shelf__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    color var(--lit),
+    border-color var(--lit);
+}
+
+a.doc-shelf__step:hover {
+  border-color: rgb(var(--accent) / 0.5);
+  color: var(--accent-ink);
+}
+
+a.doc-shelf__step:hover .shelf-arrow {
+  translate: 2px 0;
+}
+
+a.doc-shelf__step:hover .shelf-arrow[data-back] {
+  translate: -2px 0;
+}
+
+/* No document that way: the pill stays solid, its words and edge go dim. */
+span.doc-shelf__step {
+  border-color: var(--hairline);
+  color: var(--text-3);
+}
+
+span.doc-shelf__step .shelf-arrow {
+  opacity: 0.5;
+}
+
+.doc-next {
+  grid-column: full;
+  margin-top: 6rem;
+}
+
+.doc-next__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem 2rem;
+  padding: 2rem clamp(1.25rem, 3vw, 2.25rem);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-l);
+  background: linear-gradient(135deg, rgb(var(--haze) / 0.12), transparent 60%), var(--surface-1);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--lit);
+}
+
+.doc-next__card:hover {
+  border-color: rgb(var(--accent) / 0.5);
+}
+
+.doc-next__eyebrow,
+.doc-next__meta {
+  grid-column: 1;
+  font: 500 0.6875rem/1.4 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.doc-next__eyebrow {
+  color: var(--accent-ink);
+}
+
+.doc-next__meta {
+  color: var(--text-3);
+}
+
+.doc-next__title {
+  grid-column: 1;
+  font: 850 clamp(1.75rem, 4vw, 3rem) / 1 var(--display);
+  font-stretch: 70%;
+  text-wrap: balance;
+}
+
+.doc-next__card .shelf-arrow {
+  grid-row: 1 / span 3;
+  grid-column: 2;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: rgb(var(--accent));
+}
+
+.doc-next__card:hover .shelf-arrow {
+  translate: 0.4rem 0;
+}
+
+/* The end of the shelf. Its line is ink that is not lit yet, drawn the way
+   the poster title draws code: the fill is the card colour, painted over the
+   stroke, so only the outer half shows and the overlaps of the variable
+   font's contours do not. The card is flat for that. The light fills the
+   ink; the outline goes then, or the letters get heavier. */
+.doc-next__card[data-end] {
+  background: var(--surface-1);
+}
+
+.doc-next__card[data-end] .doc-next__title {
+  color: var(--surface-1);
+  letter-spacing: 0.04em;
+  -webkit-text-stroke: max(0.05em, 3px) rgb(var(--accent));
+  paint-order: stroke fill;
+}
+
+.doc-next__card[data-end]:is(:hover, :focus-visible) .doc-next__title {
+  color: rgb(var(--accent));
+  -webkit-text-stroke-width: 0;
+}
+
+/* One tube per document, filled with ink by its read share. */
+.doc-next__tubes {
+  display: flex;
+  grid-row: 1 / span 3;
+  grid-column: 2;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.doc-next__tubes i {
+  --read: 0;
+  width: 0.4rem;
+  height: 3rem;
+  border-radius: var(--radius-pill);
+  background:
+    linear-gradient(
+      to top,
+      rgb(var(--accent)) calc(var(--read) * 100%),
+      transparent calc(var(--read) * 100%)
+    ),
+    rgb(255 255 255 / 0.06);
+  box-shadow: inset 0 0 0 1px var(--hairline-strong);
+  transition: filter var(--lit);
+}
+
+.doc-next__tubes i[data-here] {
+  outline: 1.5px solid rgb(var(--accent) / 0.6);
+  outline-offset: 2px;
+}
+
+.doc-next__card:is(:hover, :focus-visible) .doc-next__tubes i {
+  filter: drop-shadow(0 0 0.35rem rgb(var(--accent) / 0.55));
+}
+
+.doc-next__card:focus-visible {
+  outline: var(--focus);
+  outline-offset: 3px;
+}
+
+@media print {
+  .doc-shelf,
+  .doc-next {
+    display: none;
+  }
+}
