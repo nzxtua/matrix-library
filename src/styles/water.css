@@ -1,0 +1,34 @@
+/* Owner: water. The pool under the card of the next document, at the foot of
+   a content page (`WaterStage`).
+
+   One canvas, fixed to the viewport behind the document: `.doc-page`
+   isolates, so `z-index: -1` puts it over the page colour and under every
+   block. The pool lies under the card, past the last block. It never takes
+   a click: the stage listens to the pointer on the window. It comes up once
+   its first frame is drawn. */
+
+.water {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 900ms ease-out;
+}
+
+.water[data-ready] {
+  opacity: 1;
+}
+
+html[data-calm] .water {
+  transition-duration: 240ms;
+}
+
+@media print {
+  .water {
+    display: none;
+  }
+}
