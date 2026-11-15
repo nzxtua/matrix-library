@@ -1,0 +1,315 @@
+/* Owner: doc. The print stylesheet: light paper, black ink, no chrome.
+   Nothing moves on paper, so there is no motion to reduce here. */
+
+@media print {
+  @page {
+    margin: 16mm 14mm 18mm;
+  }
+
+  /* The lights are on. Every vibe prints the same. */
+  :root,
+  html[data-vibe] {
+    color-scheme: light;
+    --void: #fff;
+    --bg: #fff;
+    --surface-1: #fff;
+    --surface-2: #fff;
+    --hairline: rgb(0 0 0 / 0.2);
+    --hairline-strong: rgb(0 0 0 / 0.45);
+    --text: #000;
+    --text-2: #222;
+    --text-3: #444;
+    --accent: 0 0 0;
+    --accent-2: 0 0 0;
+    --accent-ink: #000;
+    --on-accent: #fff;
+    --code-ink: #000;
+    --code-bg: rgb(0 0 0 / 0.06);
+  }
+
+  /* One size on paper, whatever the reader chose for the screen. */
+  html,
+  html[data-size] {
+    font-size: 10pt;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  /* No chrome: only the document. */
+  .doc-page > :not(.doc),
+  .doc-rain {
+    display: none !important;
+  }
+
+  .doc-page,
+  .doc-page[data-intro] {
+    display: block;
+    min-height: 0;
+    background: #fff;
+    animation: none;
+  }
+
+  /* One column that breaks over pages like text does. */
+  .doc {
+    display: block;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .doc__block {
+    max-width: 46rem;
+  }
+
+  .doc__block[data-kind="table"],
+  .doc__block[data-kind="code"],
+  .doc__block[data-kind="hr"],
+  .doc__block[data-depth="1"] {
+    max-width: none;
+  }
+
+  .doc__block[data-reveal] {
+    animation: none;
+  }
+
+  /* Marks of the screen: the ping and what a search or an echo lit. */
+  [data-ping]::after,
+  .doc-chip::after {
+    display: none;
+  }
+
+  ::highlight(search) {
+    background-color: transparent;
+    color: inherit;
+  }
+
+  ::highlight(echo) {
+    background-color: transparent;
+    color: inherit;
+  }
+
+  /* Controls do nothing on paper. */
+  .doc button,
+  .doc input,
+  .doc select,
+  .doc-ref__icon {
+    display: none !important;
+  }
+
+  .doc__block[data-kind="heading"] {
+    padding-right: 0;
+  }
+
+  /* ── Breaks ── */
+
+  /* A part starts a page. */
+  .doc__block[data-depth="1"]:not([data-title]),
+  .doc__block[data-kind="hr"] + .doc__block[data-depth="1"]:not([data-title]) {
+    margin-top: 0;
+    break-before: page;
+  }
+
+  /* A heading stays with what it heads. */
+  .doc__block[data-kind="heading"] {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+
+  .doc p,
+  .doc li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .doc li,
+  .doc blockquote {
+    break-inside: avoid;
+  }
+
+  /* ── Links ── */
+
+  .doc a {
+    text-decoration-color: currentcolor;
+  }
+
+  /* Paper cannot follow a link or copy an address: it shows it. */
+  .doc a[href^="http"]::after,
+  .doc-ref:not([data-self])::after {
+    color: var(--text-3);
+    font: 400 0.8em var(--mono);
+    overflow-wrap: anywhere;
+  }
+
+  .doc a[href^="http"]::after {
+    content: " (" attr(href) ")";
+  }
+
+  .doc-ref:not([data-self])::after {
+    content: " (" attr(data-href) ")";
+  }
+
+  .doc-ref {
+    padding: 0;
+    border: 0;
+  }
+
+  /* A contact line: the parts as plain text with their icons. A link whose
+     text is its address is not printed twice; a copy button has no use. */
+  .doc .doc-contact {
+    gap: 0.25rem 1.1rem;
+  }
+
+  .doc-contact__item {
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .doc .doc-contact__chip {
+    gap: 0.35rem;
+    padding: 0;
+    color: var(--text);
+  }
+
+  .doc-contact__well {
+    --well: 1.1rem;
+    background: none;
+    box-shadow: none;
+    color: var(--text-2);
+  }
+
+  .doc .doc-contact__chip[data-self]::after,
+  .doc-contact__away,
+  .doc-contact__copy {
+    display: none;
+  }
+
+  /* Skills rows: the label and the tools as plain text with their marks. */
+  .doc-skill {
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 0.2rem 1rem;
+    padding: 0.3rem 0;
+    border: 0;
+    background: none;
+  }
+
+  .doc__block:has(> .doc-skill):not(:has(+ .doc__block > .doc-skill)) > .doc-skill {
+    border: 0;
+  }
+
+  .doc .doc-skill__label {
+    padding: 0;
+    font-size: 0.875rem;
+  }
+
+  .doc-skill__label::before {
+    display: none;
+  }
+
+  .doc .doc-skill__list {
+    gap: 0.15rem 0.9rem;
+  }
+
+  .doc .doc-skill__item {
+    gap: 0.3rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    animation: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .doc-skill__mark {
+    height: 0.8rem;
+  }
+
+  .doc-skill__dot {
+    display: none;
+  }
+
+  /* ── Code ── */
+
+  /* The chip of a code term is printed too: without it the padding of the
+     chip reads as stray spaces. */
+  .doc code {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .doc .doc-header__title code,
+  .doc .doc-part__title code {
+    -webkit-text-stroke-width: 0.03em;
+  }
+
+  /* A part heading prints settled: `beforeprint` decodes its text, and its
+     look does not wait for a transition. */
+  .doc-part[data-decode] :is(.doc-part__eyebrow, .doc-part__title) {
+    opacity: 1;
+    transition: none;
+  }
+
+  .doc__block[data-depth="1"]::before {
+    scale: 1;
+  }
+
+  /* Every line, wrapped: nothing is folded or scrolled away. */
+  .codeblock {
+    border-color: var(--hairline-strong);
+  }
+
+  .codeblock__bar {
+    position: static;
+    min-height: 2rem;
+  }
+
+  .codeblock pre,
+  .codeblock[data-folded] pre {
+    max-height: none;
+    overflow: visible;
+    white-space: pre-wrap;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .codeblock pre code {
+    overflow-wrap: anywhere;
+  }
+
+  /* ── Tables ── */
+
+  /* A table is not cut in the middle of a row, and its header repeats on
+     every page. Nothing scrolls and nothing sticks. */
+  .doc__block[data-kind="table"] :is(div, table) {
+    overflow: visible !important;
+  }
+
+  .doc table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .doc thead {
+    display: table-header-group;
+  }
+
+  .doc thead,
+  .doc th,
+  .doc td {
+    position: static !important;
+  }
+
+  .doc tr {
+    break-inside: avoid;
+  }
+
+  /* A key cell may break anywhere, so it would give all of its width to the
+     other columns and print one letter per line. */
+  .doc tbody th {
+    min-width: 9rem;
+  }
+}
