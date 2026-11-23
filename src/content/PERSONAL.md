@@ -1,6 +1,6 @@
 # **Web & Mobile Software Engineering**
 
-## Hi! My name is Denys, nice to meet you! (;
+## Hi! My name is ==Denys|Sukhobok==, nice to meet you! (;
 
 Berlin, Germany  ·  EU Blue Card  ·  [denys.sukhobok@gmail.com](mailto:denys.sukhobok@gmail.com)  ·  +49 162 4303737  ·  [linkedin.com/in/nzxtua](https://linkedin.com/in/nzxtua/)
 
@@ -64,9 +64,9 @@ Molfar Group  ·  Ukraine  ·  Apr 2016 – Aug 2019
 
 **Testing**	Appium, AWS Device Farm, React Testing Library, Playwright, Jest, Vitest, Storybook
 
-**CI/CD & Monitoring**	Azure Pipelines, Bitbucket Pipelines, Xcode Cloud, TestFlight, Firebase (Analytics, Crashlytics, Storage, App Distribution)
+**CI/CD & Monitoring**	Jenkins, Docker, Azure Pipelines, Bitbucket Pipelines, Xcode Cloud, TestFlight, Firebase (Analytics, Crashlytics, Storage, App Distribution)
 
-**AI-assisted dev**	Claude Code, Cursor
+**AI-assisted dev**	Claude Code, Cursor, T3Code
 
 # **EDUCATION**
 

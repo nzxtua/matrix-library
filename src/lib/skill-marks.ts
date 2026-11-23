@@ -4,8 +4,10 @@ import {
   siBitbucket,
   siClaude,
   siCursor,
+  siDocker,
   siFirebase,
   siJavascript,
+  siJenkins,
   siJest,
   siNodedotjs,
   siNuxt,
@@ -40,6 +42,7 @@ import {
   reactNavigation,
   reanimated,
   rest,
+  t3Code,
 } from "#/lib/skill-art";
 import type { SkillArt } from "#/lib/skill-art";
 
@@ -132,9 +135,12 @@ const MARKS: Record<string, SkillMark> = {
   "bitbucket pipelines": glyph(siBitbucket),
   "xcode cloud": glyph(siXcode),
   testflight: glyph(siApple),
+  jenkins: glyph(siJenkins),
+  docker: glyph(siDocker),
   firebase: glyph(siFirebase),
   "claude code": glyph(siClaude),
   cursor: glyph(siCursor),
+  t3code: art(t3Code, "#ffffff"),
 };
 
 export function skillMark(name: string): SkillMark | undefined {

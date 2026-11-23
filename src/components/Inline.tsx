@@ -1,9 +1,11 @@
+import { useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 import type { Token, Tokens } from "marked";
 
 import { copy } from "#/lib/copy";
 import { copyText } from "#/lib/jump";
 import { plainText } from "#/lib/markdown";
+import type { FlipToken } from "#/lib/markdown";
 
 /** Links that leave the site. A relative link has no target here. */
 const EXTERNAL_LINK = /^(https?:|mailto:)/i;
@@ -59,6 +61,35 @@ function RefChip({ href, text, children }: { href: string; text: string; childre
 }
 
 /**
+ * A highlighted word that turns over on a click and shows the word on its
+ * back. Only the face on show takes room, so the line closes up.
+ */
+function Flip({ front, back }: { front: ReactNode; back: string }) {
+  const [flipped, setFlipped] = useState(false);
+
+  return (
+    <button
+      type="button"
+      className="doc-flip"
+      data-flipped={flipped || undefined}
+      aria-pressed={flipped}
+      aria-label={flipped ? back : undefined}
+      title={flipped ? undefined : back}
+      onClick={() => setFlipped((on) => !on)}
+    >
+      <span className="doc-flip__card">
+        <span className="doc-flip__face" aria-hidden={flipped || undefined}>
+          {front}
+        </span>
+        <span className="doc-flip__face doc-flip__face--back" aria-hidden={!flipped || undefined}>
+          {back}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+/**
  * `echo`: a code term is a target for Echo. Inside a link it is not: a click
  * there belongs to the link.
  */
@@ -82,6 +113,10 @@ function render(tokens: Token[], echo: boolean): ReactNode {
         );
       case "br":
         return <br key={key} />;
+      case "flip": {
+        const flip = token as unknown as FlipToken;
+        return <Flip key={key} front={render(flip.tokens, false)} back={flip.back} />;
+      }
       case "link": {
         const link = token as Tokens.Link;
         return EXTERNAL_LINK.test(link.href) ? (

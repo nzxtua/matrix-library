@@ -1,5 +1,36 @@
-import { lexer } from "marked";
-import type { Token, Tokens } from "marked";
+import { Marked } from "marked";
+import type { Token, TokenizerExtension, Tokens } from "marked";
+
+/**
+ * A word with a second word on its back: `==Denys|Sukhobok==`. The text of
+ * the token is the front, so a heading slug, search and a copy read "Denys".
+ */
+export interface FlipToken {
+  type: "flip";
+  raw: string;
+  text: string;
+  back: string;
+  tokens: Token[];
+}
+
+const flip: TokenizerExtension = {
+  name: "flip",
+  level: "inline",
+  start: (src) => src.indexOf("=="),
+  tokenizer(src) {
+    const match = /^==([^=|\n]+)\|([^=\n]+)==/.exec(src);
+    if (!match) return undefined;
+    return {
+      type: "flip",
+      raw: match[0],
+      text: match[1],
+      back: match[2],
+      tokens: this.lexer.inlineTokens(match[1]),
+    };
+  },
+};
+
+const lexer = (source: string) => new Marked({ extensions: [flip] }).lexer(source);
 
 import { fnv1a } from "#/lib/hash";
 

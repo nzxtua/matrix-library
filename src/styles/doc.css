@@ -1312,3 +1312,88 @@ html[data-calm] .doc-meta__badge[data-ongoing]::after {
   animation: none;
   box-shadow: 0 0 0.35rem rgb(var(--accent) / 0.6);
 }
+
+/* A name that turns over: lime ink like a selection, the surname on its back.
+   The button takes the width of the face it shows, so the line closes up. */
+.doc-flip {
+  display: inline-grid;
+  vertical-align: baseline;
+  margin: 0 0.04em;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  perspective: 600px;
+}
+
+.doc-flip__card {
+  position: relative;
+  display: inline-block;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.doc-flip[data-flipped] .doc-flip__card {
+  transform: rotateY(180deg);
+}
+
+.doc-flip__face {
+  display: inline-block;
+  padding: 0 0.12em;
+  border-radius: 0.08em;
+  background: rgb(var(--accent) / 0.85);
+  color: var(--on-accent);
+  white-space: nowrap;
+  backface-visibility: hidden;
+  box-shadow: 0 0 0 transparent;
+  transition: box-shadow 0.3s;
+}
+
+/* The face not on show sits over the one that is, out of the flow. */
+.doc-flip__face--back,
+.doc-flip[data-flipped] .doc-flip__face:not(.doc-flip__face--back) {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50% 0;
+}
+
+.doc-flip[data-flipped] .doc-flip__face--back {
+  position: static;
+  translate: none;
+}
+
+.doc-flip__face--back {
+  transform: rotateY(180deg);
+  background: rgb(var(--accent-2) / 0.9);
+}
+
+.doc-flip:hover .doc-flip__face {
+  box-shadow: 0 0 0.5em rgb(var(--accent) / 0.45);
+}
+
+.doc-flip:hover .doc-flip__face--back {
+  box-shadow: 0 0 0.5em rgb(var(--accent-2) / 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doc-flip__card {
+    transition: none;
+  }
+}
+
+@media print {
+  .doc-flip__face--back {
+    display: none;
+  }
+  .doc-flip__card {
+    transform: none !important;
+  }
+  .doc-flip__face {
+    background: none;
+    color: inherit;
+  }
+}
