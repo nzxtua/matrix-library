@@ -5,6 +5,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 
 const config = defineConfig({
+  base: "/matrix-library/",
   staged: {
     "*": "vp check --fix",
   },
